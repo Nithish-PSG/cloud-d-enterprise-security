@@ -123,9 +123,120 @@
     .asset-files { margin-top:9px; color:#8fa2bc; font-size:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .asset-upload { width:100%; margin-top:11px; min-height:28px; border:1px solid #2f5558; border-radius:7px; background:#142c33; color:#9cebe3; font-size:9px; font-weight:650; cursor:pointer; }
     .asset-upload:hover { background:#1b3e43; border-color:#3e8682; }
+    .crypto-label { display:flex; align-items:center; gap:6px; margin-top:10px; color:#8fe3ba; font-size:8px; }
+    .crypto-label i { width:6px; height:6px; border-radius:50%; background:#54d69b; box-shadow:0 0 8px #54d69b66; }
+    .asset-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+    .asset-crypto { min-width:0; min-height:29px; border:1px solid #334561; border-radius:7px; background:#17243a; color:#c4d3e8; font-size:8px; font-weight:650; cursor:pointer; }
+    .asset-crypto:hover { background:#20334d; border-color:#50718f; }
+    .asset-crypto:disabled { opacity:.55; cursor:wait; }
+    .storage-card { overflow:hidden; background:linear-gradient(115deg,#142438,#132031 65%,#172b34); border-color:#2e5960; }
+    .storage-card .card-head { align-items:center; }
+    .storage-console { display:grid; grid-template-columns:minmax(220px,1.1fr) minmax(0,2fr); gap:16px; align-items:center; padding:0 18px 17px; }
+    .storage-intro { display:flex; gap:12px; align-items:flex-start; }
+    .storage-lock { flex:0 0 auto; display:grid; place-items:center; width:39px; height:39px; border:1px solid #36756c; border-radius:11px; background:#183b3a; color:#86e8c3; font-size:18px; }
+    .storage-intro strong { display:block; font-size:11px; color:#e0edf6; }
+    .storage-intro p { margin:5px 0 0; color:#8da1b7; font-size:9px; line-height:1.55; }
+    .storage-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+    .storage-stat { border:1px solid #2a3f56; border-radius:9px; background:#101b2a99; padding:10px; min-width:0; }
+    .storage-stat span { display:block; color:#8295aa; font-size:8px; }
+    .storage-stat strong { display:block; margin-top:6px; color:#dce9f5; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .storage-note { grid-column:1/-1; border-top:1px solid #2b3d50; padding-top:10px; color:#92a5b8; font-size:8px; line-height:1.55; }
+    .cloud-head-status { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+    .cloud-head-actions { display:flex; align-items:center; gap:9px; }
+    .cloud-live { display:inline-flex; align-items:center; gap:7px; border:1px solid #285746; border-radius:20px; padding:6px 9px; background:#142b25; color:#91e2b8; font-size:8px; font-weight:750; letter-spacing:.07em; white-space:nowrap; }
+    .cloud-live i,.activity-live i { width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; animation:livePulse 1.7s ease-in-out infinite; }
+    .cloud-live.offline { border-color:#623440; background:#30202a; color:#ff9aa6; }
+    .cloud-live.syncing { border-color:#67502c; background:#2e281e; color:#ffd18a; }
+    @keyframes livePulse { 50% { opacity:.4; box-shadow:0 0 2px currentColor; } }
+    .cloud-last-sync { color:#75859c; font-size:8px; }
+    .cloud-workspace { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(250px,.72fr); gap:14px; align-items:start; }
+    .cloud-files-card,.cloud-activity-card { overflow:hidden; }
+    .cloud-tools { display:flex; align-items:center; gap:8px; padding:0 16px 13px; }
+    .cloud-search { display:flex; align-items:center; gap:8px; flex:1; min-width:140px; min-height:35px; padding:0 10px; border:1px solid #2c3d58; border-radius:8px; background:#0f192a; color:#8292aa; }
+    .cloud-search span { font-size:15px; }
+    .cloud-search input { width:100%; border:0; outline:0; background:transparent; color:#e5edf7; font-size:10px; }
+    .cloud-search input::placeholder { color:#66758d; }
+    .cloud-tools select { max-width:150px; min-height:35px; border:1px solid #2c3d58; border-radius:8px; padding:0 9px; background:#0f192a; color:#b9c7d9; font-size:9px; }
+    .file-entry { display:flex; align-items:center; gap:9px; min-width:170px; }
+    .file-icon { width:28px; height:31px; flex:0 0 auto; display:grid; place-items:center; border:1px solid #344662; border-radius:6px; background:#182841; color:#90bcff; font-size:12px; }
+    .file-icon.structured { border-color:#365b55; background:#18312f; color:#89dfb8; }
+    .file-entry-text { min-width:0; }
+    .file-entry-text strong { display:block; max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-entry-text small { display:block; margin-top:3px; color:#71829a; font-size:8px; }
+    .cloud-activity-card { min-height:260px; }
+    .activity-live { display:inline-flex; align-items:center; gap:6px; color:#82ddb1; font-size:8px; font-weight:750; letter-spacing:.06em; }
+    .activity-list { padding:0 16px 10px; }
+    .activity-row { display:grid; grid-template-columns:27px minmax(0,1fr) auto; align-items:start; gap:9px; padding:11px 0; border-top:1px solid #222f46; }
+    .activity-icon { width:26px; height:26px; display:grid; place-items:center; border:1px solid #2f445d; border-radius:8px; background:#17263a; color:#93bbff; font-size:11px; }
+    .activity-icon.success { color:#89dfb8; border-color:#31574a; background:#18302c; }
+    .activity-icon.upload { color:#7ee3db; border-color:#31605e; background:#193437; }
+    .activity-copy { min-width:0; }
+    .activity-copy strong { display:block; color:#d6e2f0; font-size:9px; font-weight:650; }
+    .activity-copy span { display:block; margin-top:4px; color:#7889a1; font-size:8px; line-height:1.45; overflow-wrap:anywhere; }
+    .activity-time { color:#6d7d94; font-size:7px; white-space:nowrap; }
+    .upload-progress { display:none; padding:0 17px 14px; }
+    .upload-progress.active { display:block; }
+    .upload-progress-track { height:6px; overflow:hidden; border-radius:8px; background:#26364d; }
+    .upload-progress-fill { height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#33b9b3,#7be6b7); transition:width .15s linear; }
+    .upload-progress-caption { display:flex; justify-content:space-between; gap:12px; margin-top:7px; color:#91a1b7; font-size:8px; }
+    .upload-progress-caption strong { color:#9ce8c2; font-variant-numeric:tabular-nums; }
+    .file-actions { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+    .file-actions .btn { padding:6px 8px; font-size:8px; }
+    .cloud-dialog { width:min(620px,calc(100% - 28px)); max-height:min(82vh,720px); overflow:auto; border:1px solid #34516a; border-radius:14px; padding:20px; background:#111b2d; color:var(--text); box-shadow:0 24px 80px #0009; }
+    .cloud-dialog::backdrop { background:#050a13bd; backdrop-filter:blur(3px); }
+    .dialog-header { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+    .dialog-header h2 { margin:4px 0 0; font-size:17px; }
+    .dialog-copy { color:#91a1b7; font-size:10px; line-height:1.6; margin:12px 0; }
+    .duplicate-list { display:grid; gap:6px; padding:0; margin:12px 0 16px; list-style:none; }
+    .duplicate-list li { display:flex; justify-content:space-between; gap:12px; padding:10px; border:1px solid #2a3c55; border-radius:8px; background:#0e1828; font-size:9px; }
+    .duplicate-list span { color:#8899b0; text-align:right; }
+    .dialog-actions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-top:15px; }
+    .dialog-actions .btn { min-height:35px; }
+    .auth-screen { min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(ellipse at 50% 0%,#173c4b 0,transparent 52%),#0a1020; }
+    .auth-screen[hidden],.app[hidden] { display:none !important; }
+    .auth-card { width:min(460px,100%); border:1px solid #2a3b55; border-radius:17px; padding:26px; background:#111b2d; box-shadow:0 24px 90px #0008; }
+    .auth-brand { display:flex; align-items:center; gap:11px; margin-bottom:24px; }
+    .auth-brand .brand-mark { width:42px; height:42px; }
+    .auth-card h1 { margin:0; font-size:24px; letter-spacing:-.5px; }
+    .auth-copy { margin:8px 0 20px; color:#90a0b7; font-size:11px; line-height:1.6; }
+    .auth-role-switch { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin:12px 0; }
+    .auth-role-switch[hidden] { display:none !important; }
+    .auth-role-switch button { min-height:38px; border:1px solid #2d3e56; border-radius:9px; background:#0d1726; color:#9aabc1; cursor:pointer; font-size:11px; font-weight:650; }
+    .auth-role-switch button.active { border-color:#35bbb4; background:#143638; color:#a1f0e8; }
+    .auth-fields { display:grid; gap:12px; margin-top:15px; }
+    .auth-fields label { display:grid; gap:6px; color:#9babc1; font-size:10px; }
+    .auth-fields input { min-height:40px; border:1px solid #2b3c55; border-radius:8px; padding:0 11px; background:#0b1422; color:#e4edf8; outline:none; }
+    .auth-fields input:focus { border-color:#35bbb4; box-shadow:0 0 0 3px #35bbb41c; }
+    .auth-password-field { display:flex; gap:7px; }
+    .auth-password-field input { min-width:0; flex:1; }
+    .password-toggle { min-width:62px; border:1px solid #2b3c55; border-radius:8px; padding:0 12px; background:#111d2e; color:#b8c8dd; cursor:pointer; font:inherit; font-size:10px; font-weight:650; }
+    .password-toggle:hover { border-color:#35bbb4; color:#a1f0e8; }
+    .password-toggle:focus-visible { outline:2px solid #80c5ff; outline-offset:2px; }
+    .auth-fields [hidden] { display:none !important; }
+    .auth-submit { width:100%; margin-top:16px; min-height:42px; }
+    .auth-message { min-height:20px; margin-top:13px; color:#8edfc2; font-size:10px; line-height:1.5; }
+    .auth-message.error { color:#ff9ca7; }
+    .auth-link-row { margin-top:17px; color:#8495ad; font-size:10px; text-align:center; }
+    .auth-link-row a { color:#80dcd5; font-weight:650; text-decoration:none; margin-left:4px; }
+    .auth-link-row a:hover { text-decoration:underline; }
+    .auth-footnote { color:#6f8099; font-size:9px; line-height:1.55; margin-top:13px; }
+    .top-right { gap:8px; }
+    .user-chip { max-width:190px; }
+    .user-chip .user-role { display:block; color:#7b8ca4; font-size:8px; }
+    .dialog-actions .btn { min-height:35px; }
+    .btn.danger { color:#ffd5da; background:#42242c; border-color:#82404b; }
+    .btn.danger:hover { background:#57303a; }
+    .version-list { display:grid; gap:8px; margin-top:15px; }
+    .version-row { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid #2a3c55; border-radius:9px; padding:11px; background:#0e1828; }
+    .version-main { min-width:0; }
+    .version-main strong { color:#e1ebf7; font-size:10px; }
+    .version-main small { display:block; margin-top:6px; color:#8495ad; font-size:8px; }
+    .version-row .pill { margin-left:7px; }
     .upload-card { border-color:#28605d; box-shadow:0 12px 35px #1b827b12; }
     .upload-card .card-head { padding-bottom:15px; }
-    .upload-controls { display:grid; grid-template-columns:minmax(220px,1.5fr) minmax(140px,1fr) minmax(160px,1fr) auto; gap:10px; align-items:end; padding:0 16px 13px; }
+    .upload-controls { display:grid; grid-template-columns:minmax(220px,1.5fr) minmax(140px,1fr) auto; gap:10px; align-items:end; padding:0 16px 13px; }
+    .folder-select-row { display:grid; grid-template-columns:minmax(120px,1fr) auto; gap:6px; }
+    .folder-select-row select { width:100%; min-height:38px; border:1px solid #2b3c55; border-radius:8px; padding:0 10px; background:#0b1422; color:#e4edf8; }
     .upload-drop { min-height:54px; border:1px dashed #3b6970; border-radius:9px; background:#111e30; display:flex; align-items:center; gap:11px; padding:10px 12px; cursor:pointer; transition:.16s ease; }
     .upload-drop:hover,.upload-drop.drag-over { border-color:var(--cyan); background:#152b38; }
     .upload-cloud-icon { width:30px; height:30px; flex:0 0 auto; display:grid; place-items:center; border-radius:8px; background:#173b40; color:var(--cyan); font-size:17px; }
@@ -207,11 +318,33 @@
     @media (max-width: 1100px) { .app { grid-template-columns: 205px minmax(0,1fr); } .content { padding: 24px 20px 38px; } .topbar { padding: 0 20px; } .grid-main,.bottom-grid { grid-template-columns: 1fr; } .asset-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } .report-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); } }
     @media (max-width: 760px) { .app { display: block; } .sidebar { position: sticky; top: 0; z-index: 8; padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; justify-content: space-between; } .brand { padding: 0 4px; } .brand-mark { width: 30px; height: 30px; } .brand-sub,.nav-label,.side-card,.side-foot,.side-spacer { display: none; } .nav { display: flex; gap: 3px; } .nav button { padding: 8px; font-size: 0; } .nav-icon { font-size: 14px; } .topbar { position: static; height: 48px; padding: 0 14px; } .content { padding: 20px 14px 32px; } .page-head { align-items: flex-start; flex-direction: column; } .page-head .actions { width: 100%; } .kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; } .report-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } .kpi { padding: 13px; } .kpi-value { font-size: 22px; } .net-layout { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3,1fr); min-height: 340px; gap: 8px; } .net-node { width: 100%; padding: 9px 8px; } .net-node.engine { grid-column: 1 / 3; grid-row: 2; width: 155px; } .net-node.auth { grid-column: 1; grid-row: 1; } .net-node.flow { grid-column: 2; grid-row: 1; } .net-node.query { grid-column: 1; grid-row: 3; } .net-node.behavior { grid-column: 2; grid-row: 3; } .network-area { min-height: 356px; } .network-svg { display: none; } .controls { grid-template-columns: 1fr 1fr; } .control:last-child { grid-column: 1 / -1; } .upload-controls { grid-template-columns: 1fr; } .upload-controls .btn { width:100%; } .attack-grid { grid-template-columns: repeat(2,1fr); } .agent-grid { grid-template-columns: 1fr; } .asset-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .threshold-card { align-items: flex-start; flex-wrap: wrap; gap: 10px; } .threshold-copy { min-width: 100%; } .threshold-slider { min-width: calc(100% - 55px); } .user-chip span { display: none; } }
     @media (max-width: 1100px) and (min-width: 761px) { .upload-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } .upload-controls .control:first-child, .upload-controls .btn { grid-column: 1 / -1; } }
+    @media (max-width: 1100px) { .storage-console { grid-template-columns: 1fr; } .cloud-workspace { grid-template-columns:1fr; } }
+    @media (max-width: 760px) { .storage-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } .storage-card .card-head { align-items: flex-start; } .asset-crypto { font-size: 7px; } .page-head.cloud-page-head { align-items:flex-start; flex-direction:column; } .cloud-head-status { align-items:flex-start; } .cloud-head-actions { align-items:center; flex-direction:row; flex-wrap:wrap; } .cloud-tools { flex-wrap:wrap; } .cloud-search { flex-basis:100%; } .cloud-tools select { flex:1; max-width:none; } }
     @media print { :root { color-scheme: light; } body { color: #111; background: white; } .sidebar,.topbar,.actions,.toast { display: none !important; } .app { display: block; } .content { max-width: none; padding: 0; } .page { display: none !important; } #page-report { display: block !important; } .card { background: white; border-color: #ccd3dd; break-inside: avoid; } .card-title,.agent-card h3,.kpi-value,td strong { color: #132033; } .subtitle,.card-desc,.report-banner p,.metric-pairs span,td,th,.footer-note { color: #435168; } .report-banner { background: #edf5f5; } .report-meta strong { color: #172439; } .report-meta { color: #506075; border-color: #d3dde4; } .table-card th { background: #edf1f5; } }
   </style>
 </head>
 <body>
-  <div class="app">
+  <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <div class="auth-brand"><div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.3 9.4 17 19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2.5 20 6v5.3c0 5.3-3.4 8.6-8 10.2-4.6-1.6-8-4.9-8-10.2V6l8-3.5Z" stroke="currentColor" stroke-width="1.5"/></svg></div><div><div class="brand-name">Cloud-D</div><div class="brand-sub">Secure cloud workspace</div></div></div>
+      <h1 id="auth-title">Sign in to your cloud</h1>
+      <p class="auth-copy" id="auth-copy">Sign in using your username and password.</p>
+      <div class="auth-role-switch" id="auth-role-switch" role="group" aria-label="Account type" hidden>
+        <button class="active" type="button" data-auth-role="customer">Customer</button>
+        <button type="button" data-auth-role="staff">Staff</button>
+      </div>
+      <form id="auth-form" class="auth-fields">
+        <label id="auth-email-field" hidden>Email address<input id="auth-email" name="email" type="email" autocomplete="email" maxlength="254"></label>
+        <label>Username<input id="auth-username" name="username" type="text" autocomplete="username" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,29}" required><small class="auth-footnote" id="auth-username-help" hidden>Use 3–30 letters, numbers, dots, underscores, or hyphens. Existing accounts use a username based on the part of their email before @.</small></label>
+        <label>Password<span class="auth-password-field"><input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="10" required><button class="password-toggle" id="password-toggle" type="button" aria-controls="auth-password" aria-label="Show password" aria-pressed="false">Show</button></span><small class="auth-footnote">Use at least 10 characters.</small></label>
+        <label id="staff-code-field" hidden>Staff Registration Code<input id="staff-registration-code" name="staff_registration_code" type="password" autocomplete="off"><small class="auth-footnote">A valid Staff Registration Code is mandatory. Staff account creation is not possible without a matching code.</small></label>
+        <button class="btn primary auth-submit" id="auth-submit" type="submit">Sign in</button>
+      </form>
+      <div class="auth-message" id="auth-message" role="status" aria-live="polite"></div>
+      <div class="auth-link-row" id="auth-link-row">New to Cloud-D?<a href="#signup" id="auth-mode-link">Create an account</a></div>
+    </div>
+  </section>
+  <div class="app" id="app-shell" hidden>
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.3 9.4 17 19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2.5 20 6v5.3c0 5.3-3.4 8.6-8 10.2-4.6-1.6-8-4.9-8-10.2V6l8-3.5Z" stroke="currentColor" stroke-width="1.5"/></svg></div>
@@ -220,10 +353,10 @@
       <div class="nav-label">Workspace</div>
       <nav class="nav" aria-label="Main navigation">
         <button class="active" data-page="cloud"><span class="nav-icon">☁</span>Cloud</button>
-        <button data-page="overview"><span class="nav-icon">◫</span>Security Overview</button>
-        <button data-page="simulation"><span class="nav-icon">⠿</span>Simulation</button>
-        <button data-page="threats"><span class="nav-icon">⌁</span>Attack Simulation</button>
-        <button data-page="report"><span class="nav-icon">▤</span>Defense report</button>
+        <button class="staff-only" data-page="overview"><span class="nav-icon">◫</span>Security Overview</button>
+        <button class="staff-only" data-page="simulation"><span class="nav-icon">⠿</span>Simulation</button>
+        <button class="staff-only" data-page="threats"><span class="nav-icon">⌁</span>Attack Simulation</button>
+        <button class="staff-only" data-page="report"><span class="nav-icon">▤</span>Defense report</button>
       </nav>
       <div class="side-spacer"></div>
       <div class="side-card"><div class="side-card-title"><span style="color:var(--cyan)">◉</span> Simulation mode</div><p>This prototype models agent decisions locally. It is not connected to a live cloud account or firewall.</p></div>
@@ -232,21 +365,24 @@
     <main class="main">
       <header class="topbar">
         <div class="crumb">Cloud-D <span style="color:#53627a;padding:0 7px">/</span> <strong id="crumb-current">Cloud</strong></div>
-        <div class="top-right"><span class="sim-badge"><i class="dot"></i> Simulation</span><div class="user-chip"><div class="avatar">NM</div><span>Nithish M · 24X064</span></div></div>
+        <div class="top-right"><span class="sim-badge"><i class="dot"></i> Simulation</span><div class="user-chip"><div class="avatar" id="current-user-avatar">CD</div><span><strong id="current-user-name">Cloud-D user</strong><small class="user-role" id="current-user-role">Customer</small></span></div><button class="btn" id="logout-button" type="button">Sign out</button></div>
       </header>
       <div class="content">
         <section class="page active" id="page-cloud">
-          <div class="page-head"><div><div class="eyebrow">Cloud storage · Local simulation</div><h1>Your simulated cloud</h1><p class="subtitle">Upload files into a cloud node, view stored items, and download them back whenever you need.</p></div><span class="pill green" id="cloud-status-pill">5/5 NODES ONLINE</span></div>
+          <div class="page-head cloud-page-head"><div><div class="eyebrow" id="cloud-area-eyebrow">Cloud storage · Encrypted database</div><h1>Your cloud files</h1><p class="subtitle" id="cloud-area-description">Upload and organize files in the folders assigned to your account.</p></div><div class="cloud-head-status"><div class="cloud-head-actions"><span class="cloud-live syncing" id="cloud-connection-badge"><i></i><span id="cloud-connection-label">CONNECTING</span></span><span class="pill green" id="cloud-status-pill">YOUR AREA</span><button type="button" class="btn primary" id="cloud-upload-shortcut">＋ Upload files</button></div><div class="cloud-last-sync">Last synced <span id="cloud-last-sync">Waiting for connection…</span></div></div></div>
           <div class="kpis">
-            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Cloud nodes online</span><span class="kpi-icon">☁</span></div><div class="kpi-value" id="cloud-nodes-online">5 / 5</div><div class="kpi-note">Simulated storage services</div></div>
-            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Files stored</span><span class="kpi-icon">▤</span></div><div class="kpi-value" id="cloud-file-count">0</div><div class="kpi-note">Uploaded to this cloud session</div></div>
-            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Records in cloud</span><span class="kpi-icon">◉</span></div><div class="kpi-value" id="cloud-record-count">1,800</div><div class="kpi-note">Includes the synthetic starter dataset</div></div>
-            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Uploaded storage</span><span class="kpi-icon">⇅</span></div><div class="kpi-value" id="cloud-storage-size">0 B</div><div class="kpi-note" id="cloud-storage-note">Files held by the simulation server</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Assigned storage area</span><span class="kpi-icon">☁</span></div><div class="kpi-value" id="cloud-nodes-online">—</div><div class="kpi-note">Automatically assigned by account type</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Current files</span><span class="kpi-icon">▤</span></div><div class="kpi-value" id="cloud-file-count">0</div><div class="kpi-note">Latest version in your folders</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Uploaded records</span><span class="kpi-icon">◉</span></div><div class="kpi-value" id="cloud-record-count">0</div><div class="kpi-note">Structured data in your files</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Encrypted backup copies</span><span class="kpi-icon">⇅</span></div><div class="kpi-value" id="cloud-storage-size">0</div><div class="kpi-note" id="cloud-storage-note">SQLite backup replica</div></div>
           </div>
-          <div class="card upload-card section-gap" id="upload-panel"><div class="card-head"><div><div class="card-title">Upload to cloud</div><div class="card-desc">Choose any document or data file, then select its destination node</div></div><span class="pill blue" id="storage-mode-pill">SIMULATION STORAGE</span></div><form class="upload-controls" id="upload-form"><div class="control"><label for="upload-file">Documents and data files</label><label class="upload-drop" id="upload-drop" for="upload-file"><span class="upload-cloud-icon">☁</span><span><strong>Choose files or drag them here</strong><small>PDF, Word, text, images, spreadsheets, CSV, JSON, and more</small></span></label><input class="upload-input-hidden" id="upload-file" name="file" type="file" multiple required aria-describedby="upload-selection"><div class="upload-selection" id="upload-selection">No files selected</div></div><div class="control"><label for="upload-node">Destination cloud node</label><select id="upload-node" name="node_id"><option value="3">Customer DB</option><option value="2">Primary DB</option><option value="0">Auth Server</option><option value="1">API Gateway</option><option value="4">Backup Server</option></select></div><div class="control"><label for="upload-mode">Import mode</label><select id="upload-mode" name="mode"><option value="append">Add to existing data</option><option value="replace">Replace this node’s data</option></select></div><button class="btn primary" type="submit" id="upload-button">Upload to cloud</button></form><div class="upload-note"><span id="upload-storage-note">Files are held in the simulation server’s memory for this session.</span> Limit: 10 MB total per upload. <span class="upload-status" id="upload-status">Python simulation ready</span></div></div>
-          <div class="card section-gap"><div class="card-head"><div><div class="card-title">Cloud storage nodes</div><div class="card-desc">Choose a node to upload directly to it. Each node is a separate simulated storage area.</div></div></div><div class="asset-grid" id="node-cards"></div></div>
-          <div class="card section-gap table-card"><div class="card-head"><div><div class="card-title">Stored files</div><div class="card-desc" id="stored-files-description">Download files uploaded during this simulation session</div></div><span class="pill blue" id="stored-files-pill">0 FILES</span></div><div class="table-wrap"><table><thead><tr><th>FILE</th><th>DESTINATION</th><th>SIZE</th><th>TYPE</th><th>RECORDS</th><th>ACTION</th></tr></thead><tbody id="cloud-files-body"><tr><td colspan="6" class="empty">No files yet. Upload a document above to add it to the cloud.</td></tr></tbody></table></div></div>
-          <div class="footer-note" id="storage-footer-note">Simulation only · files are held in server memory and cleared when the server stops.</div>
+          <div class="card storage-card section-gap"><div class="card-head"><div><div class="card-title">Primary storage and encrypted recovery copies</div><div class="card-desc">Cloud-D routes your files to the database assigned to your account and mirrors encrypted file data to the recovery database.</div></div><span class="pill green" id="database-status-pill">FILE CONTENTS ENCRYPTED</span></div><div class="storage-console"><div class="storage-intro"><span class="storage-lock">♢</span><div><strong id="database-heading">Encrypted file storage is ready</strong><p>Uploaded file contents are encrypted before saving. An encrypted recovery copy is stored separately and can be restored if a primary copy is missing.</p></div></div><div class="storage-stats"><div class="storage-stat"><span>Primary database</span><strong id="database-engine">SQLite</strong></div><div class="storage-stat"><span>File encryption</span><strong id="database-encryption">AES-256-GCM</strong></div><div class="storage-stat"><span>Backup file copies</span><strong id="database-files">0</strong></div><div class="storage-stat"><span>Backup database</span><strong id="database-size">SQLite</strong></div></div><div class="storage-note" id="database-note">File contents are encrypted in both SQLite databases. Account and folder metadata is stored separately.</div></div></div>
+          <div class="card upload-card section-gap" id="upload-panel"><div class="card-head"><div><div class="card-title">Upload to your cloud area</div><div class="card-desc">Choose files and a destination folder. Cloud-D selects your assigned storage area automatically.</div></div><span class="pill blue" id="storage-mode-pill">ENCRYPTED STORAGE</span></div><form class="upload-controls" id="upload-form"><div class="control"><label for="upload-file">Documents and data files</label><label class="upload-drop" id="upload-drop" for="upload-file"><span class="upload-cloud-icon">☁</span><span><strong>Choose files or drag them here</strong><small>PDF, Word, text, images, spreadsheets, CSV, JSON, and more</small></span></label><input class="upload-input-hidden" id="upload-file" name="file" type="file" multiple required aria-describedby="upload-selection"><div class="upload-selection" id="upload-selection">No files selected</div></div><div class="control"><label for="upload-folder">Destination folder</label><div class="folder-select-row"><select id="upload-folder" name="folder_id" required><option value="">Loading folders…</option></select><button class="btn" id="create-folder-button" type="button">＋ New folder</button></div></div><button class="btn primary" type="submit" id="upload-button">Upload encrypted</button></form><div class="upload-progress" id="upload-progress-panel" aria-live="polite"><div class="upload-progress-track"><div class="upload-progress-fill" id="upload-progress-fill"></div></div><div class="upload-progress-caption"><span id="upload-progress-stage">Ready to upload</span><strong id="upload-progress-percent">0%</strong></div></div><div class="upload-note"><span id="upload-storage-note">Files are encrypted before being written to the database.</span> Limit: 10 MB total per upload. <span class="upload-status" id="upload-status">Sign in to upload files.</span></div></div>
+          <div class="cloud-workspace section-gap">
+            <div class="card table-card cloud-files-card"><div class="card-head"><div><div class="card-title">Your cloud folders and files</div><div class="card-desc" id="stored-files-description">Files are scoped to your account type and assigned folders.</div></div><span class="pill blue" id="stored-files-pill">0 FILES</span></div><div class="cloud-tools"><label class="cloud-search"><span>⌕</span><input id="cloud-file-search" type="search" placeholder="Search files or folders…" aria-label="Search stored cloud files"></label><select id="cloud-folder-filter" aria-label="Filter by folder"><option value="all">All folders</option></select><select id="cloud-type-filter" aria-label="Filter by file type"><option value="all">All file types</option><option value="data">Structured data</option><option value="document">Documents</option></select></div><div class="table-wrap"><table><thead><tr><th>FILE</th><th>FOLDER</th><th>SIZE</th><th>TYPE</th><th>RECORDS</th><th>BACKUP</th><th>ACTION</th></tr></thead><tbody id="cloud-files-body"><tr><td colspan="7" class="empty">No files yet. Upload a document above to add it to your cloud.</td></tr></tbody></table></div></div>
+            <aside class="card cloud-activity-card"><div class="card-head"><div><div class="card-title">Live cloud activity</div><div class="card-desc">Recent actions in this browser session</div></div><span class="activity-live"><i></i>LIVE</span></div><div class="activity-list" id="cloud-activity-list"><div class="empty">Connecting to the cloud workspace…</div></div></aside>
+          </div>
+          <div class="footer-note" id="storage-footer-note">Cloud-D simulation · primary files are encrypted and mirrored into a separate recovery database.</div>
         </section>
 
         <section class="page" id="page-overview">
@@ -342,6 +478,27 @@
       </div>
     </main>
   </div>
+  <dialog class="cloud-dialog" id="folder-dialog" aria-labelledby="folder-dialog-title">
+    <div class="dialog-header"><div><div class="eyebrow">Your assigned storage area</div><h2 id="folder-dialog-title">Create a folder</h2></div><button class="btn" id="close-folder-dialog" type="button">Close</button></div>
+    <p class="dialog-copy">This folder will be available to your account in its assigned cloud area.</p>
+    <form id="folder-form" class="auth-fields">
+      <label for="folder-name-input">Folder name<input id="folder-name-input" maxlength="64" required autocomplete="off"></label>
+      <div class="dialog-actions"><button class="btn" type="button" id="cancel-folder-dialog">Cancel</button><button class="btn primary" type="submit">Create folder</button></div>
+    </form>
+  </dialog>
+  <dialog class="cloud-dialog" id="duplicate-dialog" aria-labelledby="duplicate-dialog-title">
+    <div class="dialog-header"><div><div class="eyebrow">Duplicate file detected</div><h2 id="duplicate-dialog-title">Update or replace this file?</h2></div></div>
+    <p class="dialog-copy"><strong>Update</strong> saves this upload as the next version and keeps the previous versions. <strong>Replace</strong> overwrites the existing file and clears its version history.</p>
+    <ul class="duplicate-list" id="duplicate-file-list"></ul>
+    <form method="dialog" class="dialog-actions">
+      <button class="btn primary" value="new_version">Update</button>
+      <button class="btn danger" value="replace">Replace</button>
+    </form>
+  </dialog>
+  <dialog class="cloud-dialog" id="version-dialog" aria-labelledby="version-dialog-title">
+    <div class="dialog-header"><div><div class="eyebrow">Encrypted file history</div><h2 id="version-dialog-title">Version history</h2></div><button class="btn" id="close-version-dialog" type="button">Close</button></div>
+    <div class="version-list" id="version-list"></div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="./cloud-d.js"></script>
 </body>

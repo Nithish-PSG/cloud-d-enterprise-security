@@ -1,49 +1,69 @@
-# Cloud-D local cloud simulation
+# Cloud-D multi-agent cloud security simulation
 
-Cloud-D is a self-contained educational project: a Python simulation engine, local web dashboard, simulated cloud storage, attacker and defender agents, decision engine, and downloadable reports. It uses Python’s standard library only; no package installation is needed.
+Cloud-D is an educational project with a Python API service, a web dashboard, a simulated cloud, four attacker agents, four defender agents, and SQLite storage. The API is the single entry point for login, folder and file operations, and staff simulation controls; it routes each account to its assigned storage area.
 
 ## Start Cloud-D
 
-**macOS:** Open this `outputs` folder and double-click **Start Cloud-D.command**. A Terminal window starts the local engine and opens the dashboard. Keep Terminal open while using the app; press **Ctrl+C** there to stop it. If macOS blocks the first launch, Control-click the command file, choose **Open**, then confirm **Open**.
+**macOS:** Double-click **Cloud-D.app** once to install the background service. It starts automatically at login and keeps running without a Terminal window. After setup, opening `index.html` automatically routes to the local dashboard. The first setup copies a runtime into `~/Library/Application Support/Cloud-D`, prepares a private Python environment, and installs the required package. Rebuild and reopen the app after changing project code so its runtime copy is refreshed. To remove automatic startup, delete `~/Library/LaunchAgents/edu.psgtech.cloudd.plist` and restart the Mac.
 
-**Windows:** Double-click **Start-Cloud-D-Windows.bat**. Keep its console window open while using the dashboard.
+**Windows:** Double-click **Start-Cloud-D-Windows.bat**. The first launch prepares a private Python environment and installs the required package. The browser opens automatically; keep the starter window open while using Cloud-D.
 
-Do not open `index.html` directly. The browser page needs the local Python engine for uploads, downloads, and simulation actions.
+Uploads, downloads, database operations, and simulations need the local Python service. Python 3.10 or newer is required. On macOS, the project includes **Build-Cloud-D-Mac-App.command** to recreate the one-time installer app if needed.
 
-Python 3.10 or newer is required. The launcher checks for Python and prints a clear message if it is missing. This project has no third-party dependencies.
-
-## Start from a terminal
+To start from a terminal after launcher setup:
 
 ```bash
-cd outputs
-python3 -m cloud_d.main
+.venv/bin/python -m cloud_d.main
 ```
 
-The launcher opens `http://127.0.0.1:8765/`. If the browser does not open automatically, visit that address after starting the engine. `python3 run_cloud_d.py` is also supported from this folder. `python3 -m cloud_d.main --console` runs the full attacker/defender exercise in the terminal and writes `cloud_d/results/metrics.csv` plus `cloud_d/results/charts/node_health.svg`.
+On Windows, use `.venv\Scripts\python.exe -m cloud_d.main`.
 
-## Deploy with GitHub and Render
+## Accounts and access
 
-The `render.yaml` file configures a Python web service, health check, automatic deploys, and a required secret access password. Create a Blueprint from the repository’s root `render.yaml`. Render prompts for `CLOUD_D_ACCESS_PASSWORD`; set a strong password of at least 16 characters and keep it out of GitHub. The deployed dashboard asks for this password before it reads state, runs simulations, uploads, or downloads files. This deployment was created from the public repository URL, and Render confirmed that pushes to `main` trigger Auto-Deploy. If a future push does not start a deploy, trigger one from the Render dashboard.
+Sign in with the username and password saved on the account; Cloud-D reads the registered role automatically. New users follow the **Create an account** link below the sign-in form, then provide an email address, a unique username, and password before choosing **Customer** or **Staff**. Email is collected during account creation; the username is the sign-in ID and is shown as the account name. Usernames are case-insensitive and must be 3–30 characters using letters, numbers, dots, underscores, or hyphens. Passwords are salted and hashed with scrypt; the app stores a hash of the session token and expires sessions after 12 hours. Signing out revokes the current session.
 
-The Blueprint uses Render’s free service plan. Free services can sleep after inactivity, and their local filesystem is temporary; this prototype keeps uploads in process memory, so uploads and simulation state can reset when the service sleeps, restarts, or redeploys. Durable online file storage needs a persistent storage service and is not configured here. The deployed site is a protected student demo, not a production cloud security service.
+On first launch after this update, existing accounts receive a username based on the part of their saved email before `@` (with a numeric suffix if needed to make it unique). That username is shown beside the account role after sign-in. The primary and recovery databases are migrated together, so existing accounts and files remain available.
 
-## Load your own sample records
+Staff signup requires a valid **Staff Registration Code**. On macOS, the first-time installer generates a private local code, displays it once, and stores it in `~/.cloud-d/staff-registration-code`. Configure `CLOUD_D_STAFF_REGISTRATION_CODE` on hosted services. Missing or incorrect codes are rejected immediately, and no account or pending request is created. Existing deployments can temporarily keep using the legacy `CLOUD_D_STAFF_INVITE_CODE` or `CLOUD_D_ACCESS_PASSWORD` setting; both are checked as registration codes for compatibility.
 
-The **Cloud** page opens by default. Choose a destination node and upload any file type, including PDF, Word, text, spreadsheet, image, CSV, or JSON files. You can also use **Add documents** on an individual cloud node to target it directly, or drag files into the upload area. CSV and JSON files are modeled as records; other files are stored as opaque simulated documents that attackers can target. Download any uploaded file from the stored-files list. Uploads are limited to 10 MB total per upload and 10,000 structured data rows. You can append files or replace the selected node’s sample data. The other nodes remain intact.
+The account role determines the hidden storage destination:
 
-Use **Security Overview** for the defense controls and security metrics, **Simulation** for the live agent network and attack/defense event stream, **Attack Simulation** for the threat lab controls, and **Defense Report** for the run summary.
+- **Customer** accounts use their private folders in the simulated **Customer DB**.
+- **Staff** accounts use shared operator folders in the simulated **Primary DB**. Security overview, agent simulation, threat lab, and reports are staff-only.
 
-In local mode, uploaded files are held in the local Python process’s memory. In hosted mode, the browser sends files to the Render service, where they are held in process memory for that session. The dashboard shows file names, counts, and opaque record IDs; downloads return the selected file to the authorized browser. Hosted uploads can be cleared when the service sleeps, restarts, or redeploys, so use sample data and avoid sensitive files. A new simulation run restarts node health while retaining uploaded files in the current running session.
+Users can select an existing folder or create one. They cannot select another account’s storage area. Customer files are private to that customer account; staff files are shared with staff operators.
 
-## Simulation model
+## Storage, encryption, versions, and recovery
 
-- Five nodes: Auth Server, API Gateway, Primary DB, Customer DB, and Backup Server.
-- Four attackers: Credential-Bot, FloodSwarm, Injector-X, and GhostUser.
-- Four defenders: AuthSentinel, FlowGuardian, QueryShield, and BehaviorWatch.
-- Credential-Bot uses depth-two Minimax to choose a credential tactic against modeled defender replies. QueryShield uses Expectimax chance nodes to compare defenses against uncertain SQL parser outcomes.
-- The Decision Engine ranks defender utility proposals and resolves qualifying actions against attacks in the round. Defenders also use cross-round attack signature counts as shared intelligence.
-- A run is capped at 20 rounds and may end sooner if three cloud nodes reach zero health. The dashboard shows actual node damage and record compromise from the simulation. Reports can be printed or exported as JSON and CSV.
+Cloud-D keeps a primary SQLite database and a separate SQLite recovery database. Both contain account, folder, and node metadata; file contents are encrypted with **AES-256-GCM** before the encrypted blobs are saved. The rest of the SQLite metadata is not encrypted as a whole database. Passwords are stored as salted scrypt hashes, not plaintext. The app decrypts an authorized file inside the Python service when preparing a download.
+
+By default, the local data folder is:
+
+- macOS/Linux: `~/.cloud-d/`
+- Windows: `%USERPROFILE%\.cloud-d\`
+
+It contains `cloud-d.sqlite3`, `cloud-d-backup.sqlite3`, and `encryption.key`. Keep all three together when backing up or moving local Cloud-D data. The key is created automatically and restricted to the current user where supported. If the key is lost, encrypted file contents cannot be recovered; Cloud-D will not silently generate a replacement for an existing database. Do not commit any of these files or secrets to GitHub.
+
+Set `CLOUD_D_DATA_DIR` to use a different data folder. Alternatively, `CLOUD_D_ENCRYPTION_KEY` can hold a URL-safe base64 encoding of exactly 32 random bytes. Keep that secret stable for as long as the database is needed; it takes precedence over `encryption.key`.
+
+Every upload is written to the account’s assigned primary area and mirrored as an encrypted file copy into the recovery database. The **Restore** action appears if a current primary copy is missing while its recovery copy remains available. If the primary SQLite file is replaced or lost while the backup database and key remain intact, Cloud-D rebuilds the primary file from the recovery copy on startup. Simulation state and active login sessions are not backed up.
+
+When a filename already exists in the same folder, a popup offers **Update** or **Replace**. **Update** saves a new numbered version and keeps its history. **Replace** overwrites the file and removes its earlier versions. UTC timestamps are stored with revisions. Use **Versions** to inspect or download an earlier revision. A simulation reset preserves uploaded files and version history.
+
+The app parses CSV, JSON, JSON Lines, and NDJSON into simulated records. Other file types are stored as encrypted opaque documents. Uploads are limited to 10 MB total per request and 10,000 structured rows. The dashboard shows filenames and metadata, not document contents.
+
+## Dashboard and simulation
+
+The **Cloud** page is the default page. Upload files into folders, search or filter the file list, download or restore files, and view saved versions. The **Security Overview** shows defenses and metrics. **Simulation** shows the agent network and event stream. **Attack Simulation** contains the threat lab controls. **Defense Report** summarizes a run.
+
+The simulated cloud has five nodes: Auth Server, API Gateway, Primary DB, Customer DB, and Backup Server. Four attacker agents—Credential-Bot, FloodSwarm, Injector-X, and GhostUser—face AuthSentinel, FlowGuardian, QueryShield, and BehaviorWatch. Credential-Bot uses depth-two Minimax; QueryShield uses Expectimax chance nodes. The Decision Engine ranks defender utility proposals and resolves qualifying actions. Runs process up to 20 rounds and may end earlier if three nodes reach zero health. Reports can be printed or exported as JSON and CSV.
+
+## GitHub and Render
+
+`render.yaml` configures the Python service and health check. Set `CLOUD_D_STAFF_REGISTRATION_CODE` in Render’s environment settings to a secret of at least 16 characters. Legacy `CLOUD_D_STAFF_INVITE_CODE` and `CLOUD_D_ACCESS_PASSWORD` values are also accepted during migration. Email is collected at signup; all accounts sign in with a username and password.
+
+The current Render Free service uses a temporary filesystem. The primary database, recovery database, and generated encryption key can all be lost when its instance is replaced. A recovery database on that same temporary filesystem is useful for demonstrating restore behavior, but it is not an offsite or durable backup. Durable hosted storage needs persistent storage and a separately protected, stable encryption key.
 
 ## Limits
 
-This is a local educational simulation, not a live cloud defense system. It does not connect to infrastructure, inspect real traffic, train a machine-learning model, or change firewall rules. Minimax and Expectimax are simplified bounded search models. Uploaded files become local simulated cloud records; document contents are not parsed or displayed.
+Cloud-D is an educational simulation, not a production identity service or live cloud defense system. It does not connect to infrastructure, inspect real traffic, train a machine-learning model, or change firewall rules. Minimax and Expectimax are simplified bounded search models. Use production identity, authorization, storage, and backup services before handling real customer data.

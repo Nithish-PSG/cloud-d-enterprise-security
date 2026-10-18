@@ -83,6 +83,7 @@ def run_console(delay: float = 0.0) -> dict:
     metrics_path, chart_path = write_results(report)
     print(f"\nMetrics saved to {metrics_path}")
     print(f"Node-health chart saved to {chart_path}")
+    app.close()
     return report
 
 

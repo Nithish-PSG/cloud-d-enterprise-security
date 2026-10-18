@@ -4,11 +4,7 @@ from typing import Any
 
 @dataclass
 class DataRecord:
-    """One in-memory record stored by a simulated cloud node.
-
-    Uploaded row contents stay inside the local Python process. API responses
-    intentionally expose record counts and opaque IDs only.
-    """
+    """A compact simulation record; uploaded source rows remain in encrypted storage."""
 
     id: str
     record_type: str

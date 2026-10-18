@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hmac
 import io
 import json
 import mimetypes
 import os
 import threading
 import webbrowser
+from http.cookies import SimpleCookie
 from email.parser import BytesParser
 from email.policy import default
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +17,7 @@ from urllib.parse import quote, urlsplit
 from urllib.request import urlopen
 
 from .application import CloudDApplication
+from .storage import DuplicateUploadError
 
 
 WEB_ROOT = Path(__file__).resolve().parent.parent
@@ -81,30 +82,35 @@ class CloudDHandler(BaseHTTPRequestHandler):
     def app(self) -> CloudDApplication:
         return self.server.cloud_d_app  # type: ignore[attr-defined]
 
-    def _authorize_api(self, path: str) -> bool:
-        password = os.environ.get("CLOUD_D_ACCESS_PASSWORD", "")
-        if not password or path == "/api/health" or not path.startswith("/api/"):
-            return True
-        authorization = self.headers.get("Authorization", "")
-        supplied = authorization.removeprefix("Bearer ") if authorization.startswith("Bearer ") else ""
-        if hmac.compare_digest(supplied, password):
-            return True
-        self._send_json(401, {"error": "Cloud-D access was denied. Check the access password."})
-        return False
+    def _session_token(self) -> str | None:
+        try:
+            cookies = SimpleCookie(self.headers.get("Cookie", ""))
+            morsel = cookies.get("cloud_d_session")
+            return morsel.value if morsel else None
+        except (TypeError, ValueError):
+            return None
+
+    def _current_user(self) -> dict | None:
+        return self.app.resolve_session(self._session_token())
+
+    def _require_user(self) -> dict | None:
+        user = self._current_user()
+        if user is None:
+            self._send_json(401, {"error": "Sign in to continue."})
+        return user
+
+    def _session_cookie(self, token: str, max_age: int) -> str:
+        forwarded_proto = self.headers.get("X-Forwarded-Proto", "").split(",", 1)[0].strip().lower()
+        secure = forwarded_proto == "https" or bool(os.environ.get("RENDER"))
+        return f"cloud_d_session={token}; Path=/; Max-Age={max_age}; HttpOnly; SameSite=Strict" + ("; Secure" if secure else "")
 
     def do_GET(self):
         path = urlsplit(self.path).path
-        if not self._authorize_api(path):
-            return
-        if path.startswith("/api/files/") and path.endswith("/download"):
-            file_id = path[len("/api/files/"):-len("/download")].strip("/")
-            self._download_file(file_id)
-            return
-        if path == "/api/state":
-            self._send_json(200, self.app.get_state())
-            return
         if path == "/api/health":
             self._send_json(200, {"ok": True, "mode": "local simulation"})
+            return
+        if path == "/api/auth/me":
+            self._send_json(200, {"user": self._current_user()})
             return
         if path in {"/", "/index.html"}:
             self._send_file(WEB_ROOT / "index.html", "text/html; charset=utf-8")
@@ -112,10 +118,31 @@ class CloudDHandler(BaseHTTPRequestHandler):
         if path == "/cloud-d.js":
             self._send_file(WEB_ROOT / "cloud-d.js", "text/javascript; charset=utf-8")
             return
+        user = self._require_user()
+        if user is None:
+            return
+        if path.startswith("/api/files/") and path.endswith("/download"):
+            file_id = path[len("/api/files/"):-len("/download")].strip("/")
+            self._download_file(file_id, user)
+            return
+        if path.startswith("/api/file-groups/") and path.endswith("/versions"):
+            logical_id = path[len("/api/file-groups/"):-len("/versions")].strip("/")
+            versions = self.app.get_file_versions(logical_id, user)
+            if not versions:
+                self._send_json(404, {"error": "Version history was not found for this file."})
+            else:
+                self._send_json(200, {"versions": versions})
+            return
+        if path == "/api/state":
+            self._send_json(200, self.app.get_state(user))
+            return
+        if path == "/api/folders":
+            self._send_json(200, {"folders": self.app.list_folders(user)})
+            return
         self._send_json(404, {"error": "Not found."})
 
-    def _download_file(self, file_id: str):
-        stored = self.app.get_file(file_id)
+    def _download_file(self, file_id: str, user: dict):
+        stored = self.app.get_file(file_id, user)
         if stored is None:
             self._send_json(404, {"error": "This file is no longer in the simulated cloud."})
             return
@@ -134,8 +161,6 @@ class CloudDHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if not self._authorize_api(path):
-            return
         # A browser page on another site must not be able to drive this local
         # simulation or upload files into it. Non-browser clients may omit Origin.
         origin = self.headers.get("Origin")
@@ -156,8 +181,40 @@ class CloudDHandler(BaseHTTPRequestHandler):
         if origin and origin.rstrip("/") not in expected_origins:
             self._send_json(403, {"error": "Requests must come from the local Cloud-D page."})
             return
+        if path in {"/api/auth/login", "/api/auth/signup", "/api/auth/logout"}:
+            self._handle_auth(path)
+            return
+        user = self._require_user()
+        if user is None:
+            return
+        if path == "/api/folders":
+            body = self._read_body()
+            if body is None:
+                return
+            try:
+                payload = json.loads(body.decode("utf-8"))
+                folder = self.app.create_folder(user, payload.get("name", ""))
+                self._send_json(201, {"folder": folder, "folders": self.app.list_folders(user)})
+            except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, ValueError) as exc:
+                self._send_json(400, {"error": str(exc) or "Enter a folder name."})
+            return
+        if path.startswith("/api/files/") and path.endswith("/restore"):
+            file_id = path[len("/api/files/"):-len("/restore")].strip("/")
+            try:
+                result = self.app.restore_backup_file(file_id, user)
+                if result is None:
+                    self._send_json(404, {"error": "A restorable backup copy was not found."})
+                else:
+                    self._send_json(200, result)
+            except Exception as exc:
+                print(f"Cloud-D restore error: {type(exc).__name__}: {exc}")
+                self._send_json(500, {"error": "The backup copy could not be restored."})
+            return
         if path == "/api/upload":
-            self._upload()
+            self._upload(user)
+            return
+        if user["role"] != "staff":
+            self._send_json(403, {"error": "Security simulation controls are available to staff accounts."})
             return
         body = self._read_body()
         if body is None:
@@ -168,13 +225,28 @@ class CloudDHandler(BaseHTTPRequestHandler):
                 raise ValueError("Request body must be a JSON object.")
             if path == "/api/config":
                 self.app.configure(payload)
-                self._send_json(200, self.app.get_state())
+                self._send_json(200, self.app.get_state(user))
+            elif path == "/api/node-crypto":
+                node_id = payload.get("node_id")
+                if isinstance(node_id, bool) or not isinstance(node_id, int) or node_id != 2:
+                    raise ValueError("Staff storage operations are restricted to the assigned primary area.")
+                action = payload.get("action")
+                if action == "verify":
+                    result = self.app.verify_node_decryption(node_id)
+                elif action == "reencrypt":
+                    result = self.app.reencrypt_node(node_id)
+                else:
+                    raise ValueError("Choose a supported encryption action.")
+                self._send_json(200, result)
             elif path == "/api/round":
-                self._send_json(200, self.app.simulate_round(payload))
+                self.app.simulate_round(payload)
+                self._send_json(200, self.app.get_state(user))
             elif path == "/api/restart":
-                self._send_json(200, self.app.begin_new_run(payload))
+                self.app.begin_new_run(payload)
+                self._send_json(200, self.app.get_state(user))
             elif path == "/api/reset":
-                self._send_json(200, self.app.reset())
+                self.app.reset()
+                self._send_json(200, self.app.get_state(user))
             else:
                 self._send_json(404, {"error": "Not found."})
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
@@ -183,7 +255,36 @@ class CloudDHandler(BaseHTTPRequestHandler):
             print(f"Cloud-D request error: {type(exc).__name__}: {exc}")
             self._send_json(500, {"error": "The local simulation could not complete this request."})
 
-    def _upload(self):
+    def _handle_auth(self, path: str):
+        if path == "/api/auth/logout":
+            self.app.revoke_session(self._session_token())
+            self._send_json(200, {"ok": True}, {"Set-Cookie": self._session_cookie("", 0)})
+            return
+        body = self._read_body()
+        if body is None:
+            return
+        try:
+            payload = json.loads(body.decode("utf-8")) if body else {}
+            if not isinstance(payload, dict):
+                raise ValueError("Request body must be a JSON object.")
+            if path == "/api/auth/signup":
+                result = self.app.register_user(payload)
+                self._send_json(201, {"user": result["user"]}, {
+                    "Set-Cookie": self._session_cookie(result["session"], 12 * 60 * 60)
+                })
+                return
+            result = self.app.login_user(payload)
+            self._send_json(200, {"user": result["user"]}, {
+                "Set-Cookie": self._session_cookie(result["session"], 12 * 60 * 60)
+            })
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            status = 401 if path == "/api/auth/login" else 400
+            self._send_json(status, {"error": str(exc)})
+        except Exception as exc:
+            print(f"Cloud-D authentication error: {type(exc).__name__}: {exc}")
+            self._send_json(500, {"error": "Cloud-D could not complete the account request."})
+
+    def _upload(self, user: dict):
         body = self._read_body()
         if body is None:
             return
@@ -224,11 +325,16 @@ class CloudDHandler(BaseHTTPRequestHandler):
                     values[name] = (part.get_content() or "").strip()
             if not items:
                 raise ValueError("Choose at least one document or data file first.")
-            if not values.get("node_id", "").isdigit():
-                raise ValueError("Choose the cloud node to receive these records.")
-            replace = values.get("mode") == "replace"
-            result = self.app.upload_items(int(values["node_id"]), items, replace=replace)
+            if not values.get("folder_id"):
+                raise ValueError("Choose a destination folder.")
+            duplicate_mode = values.get("duplicate_mode") or None
+            result = self.app.upload_items(
+                values["folder_id"], items, user, duplicate_mode=duplicate_mode
+            )
+            result["state"] = self.app.get_state(user)
             self._send_json(200, result)
+        except DuplicateUploadError as exc:
+            self._send_json(409, {"error": str(exc), "duplicates": exc.duplicates})
         except (ValueError, TypeError) as exc:
             self._send_json(400, {"error": str(exc)})
         except Exception as exc:
@@ -253,7 +359,7 @@ class CloudDHandler(BaseHTTPRequestHandler):
             return None
         return body
 
-    def _send_json(self, status: int, payload: dict):
+    def _send_json(self, status: int, payload: dict, headers: dict[str, str] | None = None):
         encoded = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -261,6 +367,8 @@ class CloudDHandler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'")
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(encoded)
 
@@ -290,11 +398,18 @@ def main(argv=None):
     parser.add_argument("--host", default="127.0.0.1", help="Interface to bind (default: 127.0.0.1).")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8765")), help="HTTP port (defaults to PORT or 8765).")
     args = parser.parse_args(argv)
-    app = CloudDApplication()
     url = f"http://127.0.0.1:{args.port}/"
-    password = os.environ.get("CLOUD_D_ACCESS_PASSWORD", "")
-    if args.host not in {"127.0.0.1", "localhost"} and len(password) < 16:
-        raise SystemExit("Public binding requires CLOUD_D_ACCESS_PASSWORD to be at least 16 characters.")
+    staff_registration_code = (
+        os.environ.get("CLOUD_D_STAFF_REGISTRATION_CODE")
+        or os.environ.get("CLOUD_D_STAFF_INVITE_CODE")
+        or os.environ.get("CLOUD_D_ACCESS_PASSWORD", "")
+    )
+    if args.host not in {"127.0.0.1", "localhost"} and len(staff_registration_code) < 16:
+        raise SystemExit(
+            "Public binding requires CLOUD_D_STAFF_REGISTRATION_CODE (or a legacy staff code variable) "
+            "to be at least 16 characters."
+        )
+    app = CloudDApplication()
     try:
         server = ThreadingHTTPServer((args.host, args.port), CloudDHandler)
     except OSError as exc:
@@ -305,25 +420,28 @@ def main(argv=None):
         except Exception:
             already_running = False
         if already_running:
+            app.close()
             print(f"Cloud-D is already running at {url}")
             if not args.no_browser:
                 webbrowser.open(url)
             return
+        app.close()
         raise SystemExit(
             f"Cloud-D could not use port {args.port} ({exc}). "
             "Close the program using that port, or start Cloud-D with --port 8766."
         ) from exc
     server.cloud_d_app = app  # type: ignore[attr-defined]
     print(f"Cloud-D is running locally at {url}")
-    print("Uploaded files remain in memory in this local process; press Ctrl+C to stop and clear them.")
+    print("Uploaded files are encrypted in the local SQLite database; press Ctrl+C to stop the simulation.")
     if not args.no_browser:
         threading.Timer(.6, lambda: webbrowser.open(url)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nCloud-D stopped. In-memory simulation and uploaded records have been cleared.")
+        print("\nCloud-D stopped. Encrypted uploads remain in the Cloud-D data folder.")
     finally:
         server.server_close()
+        app.close()
 
 
 if __name__ == "__main__":

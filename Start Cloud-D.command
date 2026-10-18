@@ -15,5 +15,16 @@ if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) e
   exit 1
 fi
 
+if [[ ! -x .venv/bin/python ]]; then
+  print "Preparing Cloud-D's private Python environment..."
+  python3 -m venv .venv || { print "Could not create the Python environment."; read -k 1 "?Press any key to close..."; exit 1; }
+fi
+
+if [[ ! -f .venv/.cloud_d_dependencies_ready ]]; then
+  print "Installing Cloud-D encryption support..."
+  .venv/bin/python -m pip install -r requirements.txt || { print "Could not install Cloud-D dependencies. Check your internet connection."; read -k 1 "?Press any key to close..."; exit 1; }
+  touch .venv/.cloud_d_dependencies_ready
+fi
+
 print "Starting Cloud-D. Keep this Terminal window open while you use the dashboard."
-exec python3 -m cloud_d.main
+exec .venv/bin/python -m cloud_d.main

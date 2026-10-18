@@ -76,21 +76,60 @@ class EnterpriseCloud:
             self.file_store.pop(file["id"], None)
         node.clear_records()
 
-    def _store_file(self, node: CloudNode, filename: str, content: bytes, kind: str, record_count: int) -> dict:
+    def _store_file(
+        self,
+        node: CloudNode,
+        filename: str,
+        content: bytes,
+        kind: str,
+        record_count: int,
+        file_id: str | None = None,
+        file_info: dict | None = None,
+    ) -> dict:
         self.file_counter += 1
-        file_id = f"FILE-{node.id}-{self.file_counter:06d}"
+        file_id = file_id or f"FILE-{node.id}-{self.file_counter:06d}"
+        info = file_info or {}
+        superseded_ids = set(info.get("superseded_ids", []))
+        if superseded_ids:
+            node.files[:] = [file for file in node.files if file["id"] not in superseded_ids]
+            for old_id in superseded_ids:
+                self.file_store.pop(old_id, None)
         summary = {
             "id": file_id,
+            "logical_id": info.get("logical_id", file_id),
+            "version": int(info.get("version", 1)),
+            "version_count": int(info.get("version_count", 1)),
+            "created_at": info.get("created_at"),
+            "owner_id": info.get("owner_id"),
+            "access_role": info.get("access_role", "staff"),
+            "folder_id": info.get("folder_id"),
             "filename": filename[:120],
             "size_bytes": len(content),
             "kind": kind,
             "record_count": record_count,
         }
-        self.file_store[file_id] = {**summary, "node_id": node.id, "content": bytes(content)}
+        # File contents live in EncryptedSQLiteStore. Keep only public metadata here.
+        self.file_store[file_id] = {**summary, "node_id": node.id}
         node.files.append(summary)
         if summary["filename"] not in node.uploaded_files:
             node.uploaded_files.append(summary["filename"])
         return summary
+
+    @staticmethod
+    def _remove_superseded_records(node: CloudNode, file_info: dict | None) -> None:
+        superseded_ids = set((file_info or {}).get("superseded_ids", []))
+        if not superseded_ids:
+            return
+        node.stored_data[:] = [
+            record for record in node.stored_data
+            if record.payload.get("file_id") not in superseded_ids
+        ]
+        node.files[:] = [file for file in node.files if file["id"] not in superseded_ids]
+        node.uploaded_files[:] = list(dict.fromkeys(file["filename"] for file in node.files))
+        node.total_records = len(node.stored_data)
+        node.protected_records = sum(not record.is_compromised for record in node.stored_data)
+        node.compromised_records = node.total_records - node.protected_records
+        node.uploaded_records = sum(record.source == "uploaded" for record in node.stored_data)
 
     def get_file(self, file_id: str) -> dict[str, Any] | None:
         stored = self.file_store.get(file_id)
@@ -101,8 +140,9 @@ class EnterpriseCloud:
         node_id: int,
         filename: str,
         rows: list[dict[str, Any]],
-        replace: bool = False,
         content: bytes = b"",
+        file_id: str | None = None,
+        file_info: dict | None = None,
     ) -> int:
         node = self.nodes.get(node_id)
         if node is None:
@@ -111,27 +151,28 @@ class EnterpriseCloud:
             raise ValueError("The selected file contains no data rows.")
         if len(rows) > 10_000:
             raise ValueError("A single upload is limited to 10,000 records.")
-        if replace:
-            self._clear_node_data(node)
+        self._remove_superseded_records(node, file_info)
         filename = filename[:120]
         start = node.total_records + 1
         record_type = {"auth": "credential", "api": "cache", "db": "transaction", "customer": "pii", "backup": "backup"}[node.role]
         for offset, source_row in enumerate(rows):
-            # Keep a bounded local copy for the simulation; never include it in API output.
-            payload = {str(key)[:100]: str(value)[:2_000] for key, value in source_row.items() if key is not None}
             identifier = f"UPLOAD-{node_id}-{start + offset:06d}"
             value = self._importance_value(source_row)
-            owner = "uploaded"
-            for key, item in source_row.items():
-                if str(key).strip().lower() in {"owner", "customer_id", "user_id", "account_id"}:
-                    owner = str(item)[:120]
-                    break
-            node.store(DataRecord(identifier, record_type, value, owner, source="uploaded", payload=payload))
-        self._store_file(node, filename, content, "data", len(rows))
+            # Only derived simulation fields stay in process memory. Original rows are
+            # stored encrypted by EncryptedSQLiteStore and are not copied onto records.
+            node.store(DataRecord(identifier, record_type, value, "uploaded", source="uploaded", payload={"file_id": file_id or ""}))
+        self._store_file(node, filename, content, "data", len(rows), file_id, file_info)
         self.log(f"Loaded {len(rows)} uploaded records into {node.name} ({filename})", "upload")
         return len(rows)
 
-    def add_uploaded_document(self, node_id: int, filename: str, content: bytes, replace: bool = False) -> int:
+    def add_uploaded_document(
+        self,
+        node_id: int,
+        filename: str,
+        content: bytes,
+        file_id: str | None = None,
+        file_info: dict | None = None,
+    ) -> int:
         node = self.nodes.get(node_id)
         if node is None:
             raise ValueError("Choose a valid cloud node.")
@@ -139,13 +180,12 @@ class EnterpriseCloud:
             raise ValueError("Choose a file with a name.")
         if not content:
             raise ValueError(f"{filename} is empty.")
-        if replace:
-            self._clear_node_data(node)
+        self._remove_superseded_records(node, file_info)
         filename = filename[:120]
         identifier = f"UPLOAD-{node_id}-{node.total_records + 1:06d}"
-        file = self._store_file(node, filename, content, "document", 1)
+        file = self._store_file(node, filename, content, "document", 1, file_id, file_info)
         metadata = {"filename": filename, "size_bytes": len(content), "kind": "document", "file_id": file["id"]}
-        node.store(DataRecord(identifier, "document", 50, "uploaded", source="uploaded", payload=metadata, content=bytes(content)))
+        node.store(DataRecord(identifier, "document", 50, "uploaded", source="uploaded", payload=metadata))
         self.log(f"Loaded document {filename} into {node.name} ({len(content):,} bytes)", "upload")
         return 1
 

@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import os
+import re
+import secrets
+import sqlite3
+import time
+import uuid
 from datetime import datetime, timezone
-from copy import deepcopy
 from threading import RLock
 from time import perf_counter
 
@@ -15,6 +22,7 @@ from .agents.defenders.flow_guardian import FlowGuardian
 from .agents.defenders.query_shield import QueryShield
 from .cloud.enterprise_cloud import EnterpriseCloud
 from .logic.decision_engine import DecisionEngine
+from .storage import EncryptedSQLiteStore
 
 
 VECTORS = ("auth", "flow", "query", "behavior")
@@ -34,8 +42,114 @@ class CloudDApplication:
         self.threshold = .4
         self.intensity = "normal"
         self.active_vectors = set(VECTORS)
-        self.upload_batches = []
+        self.storage = EncryptedSQLiteStore()
         self._reset_unlocked()
+
+    @staticmethod
+    def _password_hash(password: str, salt: bytes) -> bytes:
+        return hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32)
+
+    def register_user(self, details: dict) -> dict:
+        email = str(details.get("email", "")).strip().casefold()
+        username = str(details.get("username", "")).strip().casefold()
+        name = username
+        password = str(details.get("password", ""))
+        role = str(details.get("role", ""))
+        if role not in {"customer", "staff"}:
+            raise ValueError("Choose Customer or Staff as the account type.")
+        if len(email) > 254 or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+            raise ValueError("Enter a valid email address.")
+        if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{2,29}", username):
+            raise ValueError("Choose a username with 3–30 letters, numbers, dots, underscores, or hyphens; it must start with a letter or number.")
+        if len(password) < 10 or len(password) > 1024:
+            raise ValueError("Choose a password between 10 and 1024 characters.")
+
+        registration_code = (
+            os.environ.get("CLOUD_D_STAFF_REGISTRATION_CODE")
+            or os.environ.get("CLOUD_D_STAFF_INVITE_CODE")
+            or os.environ.get("CLOUD_D_ACCESS_PASSWORD", "")
+        )
+        staff_approved = role != "staff"
+        if role == "staff":
+            supplied_code = str(details.get("staff_registration_code", details.get("staff_invite_code", ""))).strip()
+            if not registration_code:
+                raise ValueError("Staff account creation is unavailable because the Staff Registration Code is not configured.")
+            if not supplied_code:
+                raise ValueError("A mandatory Staff Registration Code is required. Account creation is not possible without it.")
+            if not hmac.compare_digest(supplied_code, registration_code):
+                raise ValueError("The Staff Registration Code is incorrect. Account creation is not possible.")
+            staff_approved = True
+        status = "active"
+        salt = secrets.token_bytes(16)
+        existing = self.storage.get_user_by_email(email)
+        existing_username = self.storage.get_user_credentials(username)
+        if existing_username and (not existing or existing_username["user_id"] != existing["user_id"]):
+            raise ValueError("That username is already in use. Choose another one.")
+        if existing:
+            if (
+                role == "staff" and existing["role"] == "staff" and existing["status"] == "pending"
+                and staff_approved and hmac.compare_digest(
+                    self._password_hash(password, existing["password_salt"]), existing["password_hash"]
+                )
+            ):
+                account = self.storage.activate_pending_staff(existing["user_id"], username)
+                self.storage.ensure_default_folder(account)
+                return self._start_session(account)
+            raise ValueError("An account with that email already exists. Log in instead.")
+        try:
+            account = self.storage.create_user(
+                uuid.uuid4().hex, email, username, name, role, status, salt, self._password_hash(password, salt)
+            )
+        except sqlite3.IntegrityError as exc:
+            raise ValueError("That email address or username is already in use.") from exc
+
+        self.storage.ensure_default_folder(account)
+        return self._start_session(account)
+
+    def login_user(self, details: dict) -> dict:
+        username = str(details.get("username", "")).strip().casefold()
+        password = str(details.get("password", ""))
+        if len(password) > 1024:
+            raise ValueError("Username or password is incorrect.")
+        account = self.storage.get_user_credentials(username)
+        salt = account["password_salt"] if account else b"cloud-d-login-salt"
+        expected = account["password_hash"] if account else b"\0" * 32
+        supplied = self._password_hash(password, salt)
+        if not hmac.compare_digest(supplied, expected) or account is None:
+            raise ValueError("Username or password is incorrect.")
+        if account["status"] != "active":
+            raise ValueError("This account is inactive. Contact the Cloud-D administrator.")
+        public = self.storage.get_user(account["user_id"])
+        self.storage.ensure_default_folder(public)
+        return self._start_session(public)
+
+    def _start_session(self, user: dict) -> dict:
+        token = secrets.token_urlsafe(32)
+        expires_at = int(time.time()) + 12 * 60 * 60
+        self.storage.create_session(token, user["id"], expires_at)
+        return {"user": user, "session": token, "expires_at": expires_at}
+
+    def resolve_session(self, token: str | None) -> dict | None:
+        return self.storage.resolve_session(token)
+
+    def revoke_session(self, token: str | None) -> None:
+        self.storage.revoke_session(token)
+
+    def list_folders(self, user: dict) -> list[dict]:
+        return self.storage.list_folders(user)
+
+    def create_folder(self, user: dict, name: str) -> dict:
+        name = str(name or "").strip()
+        if not name or len(name) > 64 or name in {".", ".."} or any(char in name for char in "/\\"):
+            raise ValueError("Enter a folder name up to 64 characters without slashes.")
+        try:
+            return self.storage.create_folder(user, name)
+        except sqlite3.IntegrityError as exc:
+            raise ValueError("A folder with that name already exists in this storage area.") from exc
+
+    @staticmethod
+    def _node_for_user(user: dict) -> int:
+        return 2 if user["role"] == "staff" else 3
 
     def _reset_unlocked(self):
         self.cloud = EnterpriseCloud(seed=42)
@@ -53,10 +167,26 @@ class CloudDApplication:
         self.has_run = False
         flood = next(agent for agent in self.attackers if agent.vector_id == "flow")
         flood.request_rate = {"normal": 5_000, "elevated": 7_000, "severe": 9_000}[self.intensity]
+        self.storage.sync_nodes([node.to_dict() for node in self.cloud.nodes.values()])
+        self._restore_uploads_unlocked()
+
+    def _restore_uploads_unlocked(self) -> None:
+        """Rehydrate the simulation from encrypted uploads without persisting run state."""
+        for batch in self.storage.load_uploads():
+            node_id = batch["node_id"]
+            items = batch["items"]
+            for item in items:
+                if item["kind"] == "rows":
+                    self.cloud.add_uploaded_rows(
+                        node_id, item["filename"], item["rows"], item["content"], item["file_id"], item
+                    )
+                else:
+                    self.cloud.add_uploaded_document(
+                        node_id, item["filename"], item["content"], item["file_id"], item
+                    )
 
     def reset(self):
         with self.lock:
-            self.upload_batches = []
             self._reset_unlocked()
             return self.get_state()
 
@@ -64,16 +194,7 @@ class CloudDApplication:
         with self.lock:
             if config:
                 self.configure(config)
-            batches = deepcopy(self.upload_batches)
             self._reset_unlocked()
-            self.upload_batches = batches
-            for batch in batches:
-                for index, item in enumerate(batch["items"]):
-                    replace_node = batch["replace"] and index == 0
-                    if item["kind"] == "rows":
-                        self.cloud.add_uploaded_rows(batch["node_id"], item["filename"], item["rows"], replace_node, item.get("content", b""))
-                    else:
-                        self.cloud.add_uploaded_document(batch["node_id"], item["filename"], item["content"], replace_node)
             return self.get_state()
 
     def configure(self, values: dict) -> None:
@@ -181,13 +302,28 @@ class CloudDApplication:
             self.last_run_at = datetime.now(timezone.utc).isoformat()
             return self.get_state()
 
-    def upload_items(self, node_id: int, items: list[dict], replace: bool = False) -> dict:
+    def upload_items(
+        self,
+        folder_id: str,
+        items: list[dict],
+        user: dict,
+        duplicate_mode: str | None = None,
+    ) -> dict:
         with self.lock:
+            folder = self.storage.get_folder(folder_id, user)
+            if folder is None:
+                raise ValueError("Choose a folder in your assigned storage area.")
+            node_id = int(folder["node_id"])
             node = self.cloud.get_node(node_id)
             if node is None:
                 raise ValueError("Choose a valid cloud node.")
             if not items:
                 raise ValueError("Choose at least one file to upload.")
+            filenames = [str(item.get("filename", "")).casefold() for item in items]
+            if len(filenames) != len(set(filenames)):
+                raise ValueError("The selected files contain duplicate names. Upload one file per name at a time.")
+            total_bytes = 0
+            total_rows = 0
             for item in items:
                 if item.get("kind") == "rows" and not item.get("rows"):
                     raise ValueError(f"{item.get('filename', 'The selected file')} contains no data rows.")
@@ -195,33 +331,127 @@ class CloudDApplication:
                     raise ValueError(f"{item.get('filename', 'The selected file')} is empty.")
                 if item.get("kind") not in {"rows", "document"}:
                     raise ValueError("This file could not be added to the simulated cloud.")
+                if not item.get("filename"):
+                    raise ValueError("Choose a file with a name.")
+                content = item.get("content", b"")
+                if not isinstance(content, (bytes, bytearray, memoryview)):
+                    raise ValueError("File content must be binary data.")
+                total_bytes += len(content)
+                if total_bytes > 10 * 1024 * 1024:
+                    raise ValueError("Selected files must total 10 MB or less.")
+                if item["kind"] == "rows":
+                    rows = item["rows"]
+                    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+                        raise ValueError("Structured uploads must contain rows with named fields.")
+                    total_rows += len(rows)
+                    if len(rows) > 10_000 or total_rows > 10_000:
+                        raise ValueError("A single upload is limited to 10,000 data rows.")
+            if duplicate_mode not in {None, "new_version", "replace"}:
+                raise ValueError("Choose how to handle duplicate files.")
+            stored = self.storage.save_upload_batch(
+                node_id,
+                folder_id,
+                user["id"],
+                user["role"],
+                items,
+                duplicate_mode=duplicate_mode,
+            )
             loaded = 0
             for index, item in enumerate(items):
-                replace_node = replace and index == 0
+                file_info = stored[index]
+                file_id = file_info["id"]
                 if item["kind"] == "rows":
-                    loaded += self.cloud.add_uploaded_rows(node_id, item["filename"], item["rows"], replace_node, item.get("content", b""))
+                    loaded += self.cloud.add_uploaded_rows(
+                        node_id, item["filename"], item["rows"], item.get("content", b""), file_id, file_info
+                    )
                 elif item["kind"] == "document":
-                    loaded += self.cloud.add_uploaded_document(node_id, item["filename"], item["content"], replace_node)
+                    loaded += self.cloud.add_uploaded_document(
+                        node_id, item["filename"], item["content"], file_id, file_info
+                    )
                 else:
                     raise ValueError("This file could not be added to the simulated cloud.")
-            self.upload_batches.append({"node_id": node_id, "items": deepcopy(items), "replace": replace})
             return {
                 "loaded": loaded,
-                "files": [item["filename"] for item in items],
-                "node": node.name,
-                "state": self.get_state(),
+                "files": [item["filename"] for item in stored],
+                "file_updates": [
+                    {key: item[key] for key in ("filename", "version", "version_count", "created_at")}
+                    for item in stored
+                ],
+                "folder": folder["name"],
+                "state": self.get_state(user),
             }
 
-    def get_file(self, file_id: str) -> dict | None:
+    def get_file(self, file_id: str, user: dict) -> dict | None:
         with self.lock:
-            return self.cloud.get_file(file_id)
+            return self.storage.get_file(file_id, user)
 
-    def upload_rows(self, node_id: int, filename: str, rows: list[dict], replace: bool = False) -> dict:
-        return self.upload_items(node_id, [{"kind": "rows", "filename": filename, "rows": rows}], replace)
+    def get_file_versions(self, logical_id: str, user: dict) -> list[dict]:
+        with self.lock:
+            return self.storage.get_file_versions(logical_id, user)
 
-    def get_state(self) -> dict:
+    def restore_backup_file(self, file_id: str, user: dict) -> dict | None:
+        with self.lock:
+            restored = self.storage.restore_backup_file(file_id, user)
+            if restored is None:
+                return None
+            if restored.get("is_current"):
+                node = self.cloud.get_node(int(restored["node_id"]))
+                if node and not any(file["id"] == file_id for file in node.files):
+                    item_info = {**restored, "logical_id": restored["logical_id"], "version_count": 1}
+                    if restored["kind"] == "data":
+                        self.cloud.add_uploaded_rows(
+                            int(restored["node_id"]), restored["filename"], restored["rows"],
+                            restored["content"], file_id, item_info,
+                        )
+                    else:
+                        self.cloud.add_uploaded_document(
+                            int(restored["node_id"]), restored["filename"], restored["content"], file_id, item_info
+                        )
+            return {"filename": restored["filename"], "restored": True, "state": self.get_state(user)}
+
+    def verify_node_decryption(self, node_id: int) -> dict:
+        with self.lock:
+            node = self.cloud.get_node(node_id)
+            if node is None:
+                raise ValueError("Choose a valid cloud node.")
+            verified = self.storage.verify_node_decryption(node_id)
+            return {"node": node.name, "verified": verified, "encryption": "AES-256-GCM"}
+
+    def reencrypt_node(self, node_id: int) -> dict:
+        with self.lock:
+            node = self.cloud.get_node(node_id)
+            if node is None:
+                raise ValueError("Choose a valid cloud node.")
+            updated = self.storage.reencrypt_node(node_id)
+            return {"node": node.name, "reencrypted": updated, "encryption": "AES-256-GCM"}
+
+    def get_state(self, user: dict | None = None) -> dict:
+        if user and user["role"] == "customer":
+            return {
+                "round": 0,
+                "max_rounds": self.cloud.MAX_ROUNDS,
+                "has_run": False,
+                "game_over": False,
+                "last_run_at": None,
+                "threshold": self.threshold,
+                "intensity": self.intensity,
+                "active_vectors": [],
+                "counts": {},
+                "metrics": None,
+                "nodes": [],
+                "storage": self.storage.snapshot(user),
+                "files": self.storage.list_files(user),
+                "folders": self.storage.list_folders(user),
+                "attack_log": [],
+                "events": [],
+                "proposals": [],
+                "latency_ms": 0,
+                "attackers": [],
+                "defenders": [],
+                "current_user": user,
+            }
         report = self.cloud.final_report()
-        return {
+        state = {
             "round": self.cloud.round,
             "max_rounds": self.cloud.MAX_ROUNDS,
             "has_run": self.has_run,
@@ -233,6 +463,9 @@ class CloudDApplication:
             "counts": {key: dict(value) for key, value in self.counts.items()},
             "metrics": report,
             "nodes": report["node_health"],
+            "storage": self.storage.snapshot(user),
+            "files": self.storage.list_files(user) if user else [],
+            "folders": self.storage.list_folders(user) if user else [],
             "attack_log": list(self.attack_log),
             "events": list(self.cloud.events[-60:]),
             "proposals": [dict(proposal) for proposal in self.last_proposals],
@@ -248,3 +481,13 @@ class CloudDApplication:
                 for agent in self.defenders
             ],
         }
+        if user:
+            state["current_user"] = user
+            # File names are exposed only through the permission-filtered file list.
+            for node in state["nodes"]:
+                node["files"] = []
+                node["uploaded_files"] = []
+        return state
+
+    def close(self) -> None:
+        self.storage.close()

@@ -8,5 +8,5 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
-      - key: CLOUD_D_ACCESS_PASSWORD
+      - key: CLOUD_D_STAFF_REGISTRATION_CODE
         sync: false
