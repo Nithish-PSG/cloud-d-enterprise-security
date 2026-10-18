@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cloud-d-demo
+    name: cloud-d
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
