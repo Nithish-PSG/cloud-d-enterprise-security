@@ -1,0 +1,2 @@
+rounds,total_attacks,blocked,block_rate,total_records,protected,compromised,protection_rate,damage_taken
+20,80,78,97.5,1800,1799,1,99.944,5

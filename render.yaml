@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cloud-d-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m cloud_d.main --host 0.0.0.0 --port $PORT --no-browser
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: CLOUD_D_ACCESS_PASSWORD
+        sync: false

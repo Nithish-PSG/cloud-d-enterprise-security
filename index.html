@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1020">
+  <title>Cloud-D | Multi-Agent Cloud Defense</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a1020;
+      --surface: #111a2d;
+      --surface-2: #151f34;
+      --surface-3: #1a2740;
+      --line: #26344d;
+      --muted: #8290a9;
+      --text: #eaf0fa;
+      --cyan: #52d6d0;
+      --blue: #79a9ff;
+      --green: #54d69b;
+      --amber: #ffc66d;
+      --red: #ff7887;
+      --purple: #b49aff;
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--bg); color: var(--text); }
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { display: grid; grid-template-columns: 238px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { padding: 24px 16px; border-right: 1px solid var(--line); background: #0d1526; display: flex; flex-direction: column; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 26px; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; color: #06201f; background: linear-gradient(145deg, #7be6df, #39b9b8); box-shadow: 0 7px 22px #46ccc533; }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-name { font-size: 16px; font-weight: 750; letter-spacing: -.04em; }
+    .brand-sub { margin-top: 2px; color: var(--muted); font-size: 10px; letter-spacing: .11em; text-transform: uppercase; }
+    .nav-label { color: #66758f; font-size: 10px; font-weight: 700; letter-spacing: .14em; padding: 12px 11px 9px; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav button { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 0; border-radius: 9px; background: transparent; color: #93a0b8; text-align: left; font-size: 13px; transition: .18s ease; }
+    .nav button:hover { color: var(--text); background: #ffffff08; }
+    .nav button.active { color: #d9fffb; background: #173233; box-shadow: inset 2px 0 var(--cyan); }
+    .nav-icon { width: 17px; text-align: center; font-size: 15px; }
+    .side-spacer { flex: 1; }
+    .side-card { border: 1px solid #284147; background: linear-gradient(145deg, #142d34, #122131); border-radius: 12px; padding: 14px; margin: 10px 3px 16px; }
+    .side-card-title { font-size: 11px; font-weight: 700; color: #d8f9f6; display: flex; gap: 7px; align-items: center; }
+    .side-card p { color: #92aab3; font-size: 10px; line-height: 1.55; margin: 8px 0 0; }
+    .side-foot { border-top: 1px solid var(--line); padding: 15px 10px 0; color: #697991; font-size: 10px; line-height: 1.6; }
+    .main { min-width: 0; }
+    .topbar { height: 66px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; background: #0c1424cc; position: sticky; top: 0; z-index: 5; backdrop-filter: blur(12px); }
+    .crumb { color: #7888a2; font-size: 12px; }
+    .crumb strong { color: #c9d4e6; font-weight: 600; }
+    .top-right { display: flex; align-items: center; gap: 16px; }
+    .sim-badge { border: 1px solid #6e502b; background: #2d2419; color: #ffd18a; border-radius: 20px; padding: 6px 10px; font-size: 10px; font-weight: 700; letter-spacing: .06em; display: inline-flex; gap: 7px; align-items: center; text-transform: uppercase; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+    .user-chip { display: flex; align-items: center; gap: 9px; color: #c4cee0; font-size: 11px; }
+    .avatar { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #293754; color: #bcd1fa; font-size: 10px; font-weight: 700; }
+    .content { max-width: 1550px; margin: auto; padding: 28px 30px 45px; }
+    .page { display: none; animation: appear .22s ease; }
+    .page.active { display: block; }
+    @keyframes appear { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 22px; }
+    .eyebrow { color: var(--cyan); text-transform: uppercase; letter-spacing: .15em; font-size: 9px; font-weight: 800; margin-bottom: 7px; }
+    h1 { margin: 0; font-size: clamp(23px, 3vw, 30px); letter-spacing: -.045em; line-height: 1.15; }
+    .subtitle { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 37px; border: 1px solid var(--line); color: #c8d3e5; border-radius: 9px; background: #121c2e; padding: 0 13px; font-size: 11px; font-weight: 650; transition: .18s ease; }
+    .btn:hover { background: #1a2942; border-color: #41526f; transform: translateY(-1px); }
+    .btn.primary { background: #3cc8bf; color: #061b1b; border-color: #3cc8bf; box-shadow: 0 6px 18px #36c8bf25; }
+    .btn.primary:hover { background: #6ce3d9; }
+    .btn svg { width: 14px; height: 14px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 13px; margin-bottom: 15px; }
+    .report-kpis { grid-template-columns: repeat(5, minmax(0,1fr)); }
+    .card { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); min-width: 0; }
+    .kpi { padding: 16px 17px; position: relative; overflow: hidden; }
+    .kpi:after { content: ""; position: absolute; width: 90px; height: 90px; right: -30px; top: -42px; border-radius: 50%; background: var(--glow, #50d4d033); filter: blur(4px); }
+    .kpi-top { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
+    .kpi-label { color: #9aa8bf; font-size: 10px; font-weight: 650; }
+    .kpi-icon { color: var(--accent, var(--cyan)); font-size: 14px; }
+    .kpi-value { font-size: 25px; letter-spacing: -.055em; font-weight: 760; margin-top: 11px; position: relative; z-index: 1; }
+    .kpi-note { font-size: 9px; color: #7888a1; margin-top: 4px; position: relative; z-index: 1; }
+    .kpi-note strong { color: var(--green); font-weight: 650; }
+    .grid-main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .92fr); gap: 15px; }
+    .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 16px 18px 13px; }
+    .card-title { font-size: 12px; font-weight: 700; letter-spacing: -.01em; }
+    .card-desc { color: #7888a1; font-size: 9px; margin-top: 4px; }
+    .mini-label { color: #7f8ea8; font-size: 9px; }
+    .network-card { overflow: hidden; }
+    .network-area { padding: 5px 18px 18px; min-height: 250px; position: relative; }
+    .network-svg { position: absolute; inset: 10px 14px 15px; width: calc(100% - 28px); height: calc(100% - 25px); overflow: visible; }
+    .link-line { stroke: #34425e; stroke-width: 1.2; stroke-dasharray: 5 5; }
+    .link-line.active { stroke: #52d6d0; stroke-dasharray: 4 4; animation: dash 1.5s linear infinite; }
+    @keyframes dash { to { stroke-dashoffset: -20; } }
+    .net-layout { position: relative; z-index: 1; min-height: 226px; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; align-items: center; justify-items: center; gap: 12px; }
+    .net-node { width: min(100%, 175px); border: 1px solid #2a3a55; border-radius: 11px; background: #131e31; padding: 11px 12px; box-shadow: 0 12px 24px #050a1555; }
+    .net-node.engine { grid-column: 2; grid-row: 1 / 3; width: min(100%, 170px); border-color: #276463; background: linear-gradient(150deg, #173437, #142537); text-align: center; padding: 17px 12px; }
+    .net-node.auth { grid-column: 1; grid-row: 1; }
+    .net-node.flow { grid-column: 3; grid-row: 1; }
+    .net-node.query { grid-column: 1; grid-row: 2; }
+    .net-node.behavior { grid-column: 3; grid-row: 2; }
+    .node-top { display: flex; align-items: center; gap: 8px; }
+    .node-icon { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: #1e3343; font-size: 12px; color: var(--cyan); }
+    .node-name { font-size: 10px; font-weight: 720; white-space: nowrap; }
+    .node-meta { color: #8290a9; font-size: 8px; margin-top: 3px; }
+    .node-state { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 9px #54d69b99; }
+    .node-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #26334b; margin-top: 9px; padding-top: 7px; color: #8c9ab1; font-size: 8px; }
+    .node-bottom strong { color: #c5d1e5; font-size: 9px; font-weight: 650; }
+    .engine-symbol { margin: 0 auto 9px; width: 39px; height: 39px; border-radius: 12px; display: grid; place-items: center; border: 1px solid #377d78; color: #78e1da; background: #1b4545; }
+    .engine-symbol svg { width: 21px; height: 21px; }
+    .engine-name { font-weight: 750; font-size: 11px; }
+    .engine-tag { color: #9ab7b9; font-size: 8px; margin-top: 4px; }
+    .engine-rule { margin-top: 12px; border-radius: 7px; padding: 7px 5px; color: #a9eeea; background: #193b3e; font-size: 8px; }
+    .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 15px; margin-top: 15px; }
+    .asset-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; padding: 0 16px 16px; }
+    .asset-card { background: #131e31; border: 1px solid #26354e; border-radius: 10px; padding: 12px; min-width: 0; }
+    .asset-name { font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .asset-role { color: #7f8ea7; font-size: 8px; margin-top: 4px; }
+    .asset-health { display:flex; justify-content:space-between; align-items:center; margin-top: 11px; font-size: 8px; color: #93a2b9; }
+    .health-track { height: 4px; border-radius: 6px; background: #29364c; margin-top: 6px; overflow:hidden; }
+    .health-fill { height:100%; border-radius:inherit; background:var(--green); transition:width .35s ease; }
+    .asset-data { display:flex; justify-content:space-between; gap:5px; color:#8190a7; font-size:8px; margin-top:9px; }
+    .asset-data strong { color:#d4deed; font-weight:650; }
+    .asset-files { margin-top:9px; color:#8fa2bc; font-size:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .asset-upload { width:100%; margin-top:11px; min-height:28px; border:1px solid #2f5558; border-radius:7px; background:#142c33; color:#9cebe3; font-size:9px; font-weight:650; cursor:pointer; }
+    .asset-upload:hover { background:#1b3e43; border-color:#3e8682; }
+    .upload-card { border-color:#28605d; box-shadow:0 12px 35px #1b827b12; }
+    .upload-card .card-head { padding-bottom:15px; }
+    .upload-controls { display:grid; grid-template-columns:minmax(220px,1.5fr) minmax(140px,1fr) minmax(160px,1fr) auto; gap:10px; align-items:end; padding:0 16px 13px; }
+    .upload-drop { min-height:54px; border:1px dashed #3b6970; border-radius:9px; background:#111e30; display:flex; align-items:center; gap:11px; padding:10px 12px; cursor:pointer; transition:.16s ease; }
+    .upload-drop:hover,.upload-drop.drag-over { border-color:var(--cyan); background:#152b38; }
+    .upload-cloud-icon { width:30px; height:30px; flex:0 0 auto; display:grid; place-items:center; border-radius:8px; background:#173b40; color:var(--cyan); font-size:17px; }
+    .upload-drop strong { display:block; color:#e0edf6; font-size:10px; }
+    .upload-drop small { display:block; color:#8799b1; font-size:8px; margin-top:3px; }
+    .upload-input-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .upload-selection { color:#aab8cc; font-size:8px; margin-top:6px; overflow-wrap:anywhere; }
+    .upload-note { padding:0 17px 15px; color:#8290a9; font-size:9px; line-height:1.6; }
+    .upload-status { display:block; color:#83e4b4; font-size:9px; margin-top:4px; }
+    .agents-list { padding: 0 18px 14px; }
+    .agent-row { display: grid; grid-template-columns: minmax(120px,1fr) minmax(90px,1fr) 35px; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #222f46; }
+    .agent-id { display: flex; align-items: center; gap: 9px; font-size: 10px; font-weight: 650; }
+    .agent-icon { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: #1b293e; color: var(--agent-color, var(--cyan)); font-size: 11px; }
+    .bar-wrap { height: 5px; background: #26334a; border-radius: 9px; overflow: hidden; }
+    .bar { height: 100%; width: 0; border-radius: inherit; background: var(--agent-color, var(--cyan)); transition: width .45s ease; }
+    .agent-score { text-align: right; font-size: 10px; color: #b4c2d9; font-variant-numeric: tabular-nums; }
+    .feed { padding: 0 17px 8px; max-height: 250px; overflow: auto; }
+    .feed-item { display: grid; grid-template-columns: 8px minmax(0,1fr) auto; gap: 9px; padding: 9px 0; border-top: 1px solid #222f46; align-items: start; }
+    .feed-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 3px; background: var(--green); }
+    .feed-dot.missed { background: var(--red); }
+    .feed-title { font-size: 9px; font-weight: 650; line-height: 1.4; }
+    .feed-detail { font-size: 8px; color: #7f8ea7; margin-top: 3px; }
+    .feed-time { color: #76849c; font-size: 8px; white-space: nowrap; }
+    .pill { border-radius: 20px; display: inline-block; padding: 3px 7px; font-size: 8px; font-weight: 700; letter-spacing: .03em; white-space: nowrap; }
+    .pill.green { background: #163a30; color: #76e2b1; }
+    .pill.amber { background: #3a2e1b; color: #ffd18a; }
+    .pill.red { background: #3d202a; color: #ff9aa6; }
+    .pill.blue { background: #1d2e49; color: #94b9ff; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 13px; padding: 15px 18px 18px; }
+    .control label { color: #9aa8bf; font-size: 9px; font-weight: 650; display: block; margin-bottom: 7px; }
+    .control select { width: 100%; background: #111c30; color: #dce5f3; border: 1px solid #2c3c58; border-radius: 8px; padding: 8px 9px; font-size: 10px; outline: none; }
+    .slider-row { display: flex; justify-content: space-between; color: #7d8da6; font-size: 8px; margin-top: 5px; }
+    input[type=range] { width: 100%; accent-color: var(--cyan); height: 13px; margin: 0; }
+    .toggle-list { display: flex; gap: 7px; flex-wrap: wrap; }
+    .toggle { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #30415c; background: #152139; border-radius: 7px; padding: 6px 8px; color: #c2cde0; font-size: 9px; cursor: pointer; }
+    .toggle input { accent-color: var(--cyan); margin: 0; width: 11px; height: 11px; }
+    .section-gap { margin-top: 16px; }
+    .section-title { font-size: 14px; letter-spacing: -.025em; margin: 22px 0 11px; }
+    .attack-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .attack-card { padding: 15px; position: relative; overflow: hidden; }
+    .attack-card .top { display: flex; justify-content: space-between; align-items: center; }
+    .attack-symbol { width: 30px; height: 30px; display: grid; place-items: center; background: #1c2b43; border-radius: 9px; color: var(--attack-color, var(--red)); }
+    .attack-name { font-size: 11px; font-weight: 700; margin-top: 12px; }
+    .attack-type { font-size: 8px; color: #7f8da5; margin-top: 4px; }
+    .attack-stats { display: flex; justify-content: space-between; border-top: 1px solid #28364f; margin-top: 12px; padding-top: 9px; color: #8796ad; font-size: 8px; }
+    .attack-stats strong { color: #cbd5e5; font-size: 9px; }
+    .sim-control-card { padding-bottom: 14px; }
+    .threshold-card { padding: 14px 18px; display: flex; align-items: center; gap: 18px; }
+    .threshold-copy { min-width: 180px; }
+    .threshold-title { font-size: 10px; font-weight: 700; }
+    .threshold-help { color: #8290a9; font-size: 8px; margin-top: 4px; }
+    .threshold-slider { flex: 1; }
+    .threshold-value { color: var(--cyan); font-size: 13px; font-weight: 750; min-width: 43px; text-align: right; }
+    .agent-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; }
+    .agent-card { padding: 16px; }
+    .agent-card-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .agent-card-name { display: flex; gap: 10px; align-items: center; }
+    .agent-card-name .agent-icon { width: 34px; height: 34px; }
+    .agent-card h3 { font-size: 12px; margin: 0; }
+    .agent-card p { color: #8290a9; font-size: 9px; line-height: 1.55; margin: 11px 0 14px; }
+    .metric-pairs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; border-top: 1px solid #26344d; padding-top: 11px; }
+    .metric-pairs span { color: #8290a9; display: block; font-size: 8px; }
+    .metric-pairs strong { display: block; margin-top: 5px; font-size: 11px; color: #d6e0ef; }
+    .report-banner { padding: 18px 20px; background: linear-gradient(110deg, #172e36, #15233b 70%, #242344); border-color: #345063; }
+    .report-banner p { color: #aabbd0; font-size: 10px; max-width: 760px; line-height: 1.65; margin: 8px 0 0; }
+    .report-meta { display: flex; flex-wrap: wrap; gap: 18px; padding-top: 12px; margin-top: 14px; border-top: 1px solid #ffffff16; color: #96a7bd; font-size: 9px; }
+    .report-meta strong { color: #dce8f6; margin-left: 5px; font-weight: 650; }
+    .table-card { overflow: hidden; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 9px; min-width: 570px; }
+    th { text-align: left; color: #7f8ea8; font-weight: 650; background: #131e31; padding: 10px 15px; border-top: 1px solid #25344d; border-bottom: 1px solid #25344d; }
+    td { padding: 11px 15px; color: #bbc8da; border-bottom: 1px solid #222f46; }
+    tbody tr:last-child td { border-bottom: 0; }
+    td strong { color: #e0e8f3; font-weight: 650; }
+    .footer-note { color: #6f7f98; text-align: center; font-size: 8px; padding: 18px 0 0; }
+    .toast { position: fixed; right: 22px; bottom: 20px; z-index: 20; background: #183b37; color: #b4fbdf; border: 1px solid #32776a; padding: 11px 14px; border-radius: 9px; font-size: 10px; box-shadow: 0 15px 40px #0007; opacity: 0; transform: translateY(10px); pointer-events: none; transition: .24s ease; }
+    .toast.show { opacity: 1; transform: none; }
+    .empty { color: #7989a2; font-size: 10px; padding: 18px 0; text-align: center; }
+    @media (max-width: 1100px) { .app { grid-template-columns: 205px minmax(0,1fr); } .content { padding: 24px 20px 38px; } .topbar { padding: 0 20px; } .grid-main,.bottom-grid { grid-template-columns: 1fr; } .asset-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } .report-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+    @media (max-width: 760px) { .app { display: block; } .sidebar { position: sticky; top: 0; z-index: 8; padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; justify-content: space-between; } .brand { padding: 0 4px; } .brand-mark { width: 30px; height: 30px; } .brand-sub,.nav-label,.side-card,.side-foot,.side-spacer { display: none; } .nav { display: flex; gap: 3px; } .nav button { padding: 8px; font-size: 0; } .nav-icon { font-size: 14px; } .topbar { position: static; height: 48px; padding: 0 14px; } .content { padding: 20px 14px 32px; } .page-head { align-items: flex-start; flex-direction: column; } .page-head .actions { width: 100%; } .kpis { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; } .report-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } .kpi { padding: 13px; } .kpi-value { font-size: 22px; } .net-layout { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3,1fr); min-height: 340px; gap: 8px; } .net-node { width: 100%; padding: 9px 8px; } .net-node.engine { grid-column: 1 / 3; grid-row: 2; width: 155px; } .net-node.auth { grid-column: 1; grid-row: 1; } .net-node.flow { grid-column: 2; grid-row: 1; } .net-node.query { grid-column: 1; grid-row: 3; } .net-node.behavior { grid-column: 2; grid-row: 3; } .network-area { min-height: 356px; } .network-svg { display: none; } .controls { grid-template-columns: 1fr 1fr; } .control:last-child { grid-column: 1 / -1; } .upload-controls { grid-template-columns: 1fr; } .upload-controls .btn { width:100%; } .attack-grid { grid-template-columns: repeat(2,1fr); } .agent-grid { grid-template-columns: 1fr; } .asset-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .threshold-card { align-items: flex-start; flex-wrap: wrap; gap: 10px; } .threshold-copy { min-width: 100%; } .threshold-slider { min-width: calc(100% - 55px); } .user-chip span { display: none; } }
+    @media (max-width: 1100px) and (min-width: 761px) { .upload-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } .upload-controls .control:first-child, .upload-controls .btn { grid-column: 1 / -1; } }
+    @media print { :root { color-scheme: light; } body { color: #111; background: white; } .sidebar,.topbar,.actions,.toast { display: none !important; } .app { display: block; } .content { max-width: none; padding: 0; } .page { display: none !important; } #page-report { display: block !important; } .card { background: white; border-color: #ccd3dd; break-inside: avoid; } .card-title,.agent-card h3,.kpi-value,td strong { color: #132033; } .subtitle,.card-desc,.report-banner p,.metric-pairs span,td,th,.footer-note { color: #435168; } .report-banner { background: #edf5f5; } .report-meta strong { color: #172439; } .report-meta { color: #506075; border-color: #d3dde4; } .table-card th { background: #edf1f5; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.3 9.4 17 19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2.5 20 6v5.3c0 5.3-3.4 8.6-8 10.2-4.6-1.6-8-4.9-8-10.2V6l8-3.5Z" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <div><div class="brand-name">Cloud-D</div><div class="brand-sub">Defense intelligence</div></div>
+      </div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="active" data-page="cloud"><span class="nav-icon">☁</span>Cloud</button>
+        <button data-page="overview"><span class="nav-icon">◫</span>Security Overview</button>
+        <button data-page="simulation"><span class="nav-icon">⠿</span>Simulation</button>
+        <button data-page="threats"><span class="nav-icon">⌁</span>Attack Simulation</button>
+        <button data-page="report"><span class="nav-icon">▤</span>Defense report</button>
+      </nav>
+      <div class="side-spacer"></div>
+      <div class="side-card"><div class="side-card-title"><span style="color:var(--cyan)">◉</span> Simulation mode</div><p>This prototype models agent decisions locally. It is not connected to a live cloud account or firewall.</p></div>
+      <div class="side-foot">PSG College of Technology<br>Applied Mathematics &amp; Computational Sciences</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb">Cloud-D <span style="color:#53627a;padding:0 7px">/</span> <strong id="crumb-current">Cloud</strong></div>
+        <div class="top-right"><span class="sim-badge"><i class="dot"></i> Simulation</span><div class="user-chip"><div class="avatar">NM</div><span>Nithish M · 24X064</span></div></div>
+      </header>
+      <div class="content">
+        <section class="page active" id="page-cloud">
+          <div class="page-head"><div><div class="eyebrow">Cloud storage · Local simulation</div><h1>Your simulated cloud</h1><p class="subtitle">Upload files into a cloud node, view stored items, and download them back whenever you need.</p></div><span class="pill green" id="cloud-status-pill">5/5 NODES ONLINE</span></div>
+          <div class="kpis">
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Cloud nodes online</span><span class="kpi-icon">☁</span></div><div class="kpi-value" id="cloud-nodes-online">5 / 5</div><div class="kpi-note">Simulated storage services</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Files stored</span><span class="kpi-icon">▤</span></div><div class="kpi-value" id="cloud-file-count">0</div><div class="kpi-note">Uploaded to this cloud session</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Records in cloud</span><span class="kpi-icon">◉</span></div><div class="kpi-value" id="cloud-record-count">1,800</div><div class="kpi-note">Includes the synthetic starter dataset</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Uploaded storage</span><span class="kpi-icon">⇅</span></div><div class="kpi-value" id="cloud-storage-size">0 B</div><div class="kpi-note">Files held by the local simulation</div></div>
+          </div>
+          <div class="card upload-card section-gap" id="upload-panel"><div class="card-head"><div><div class="card-title">Upload to cloud</div><div class="card-desc">Choose any document or data file, then select its destination node</div></div><span class="pill blue">LOCAL ONLY</span></div><form class="upload-controls" id="upload-form"><div class="control"><label for="upload-file">Documents and data files</label><label class="upload-drop" id="upload-drop" for="upload-file"><span class="upload-cloud-icon">☁</span><span><strong>Choose files or drag them here</strong><small>PDF, Word, text, images, spreadsheets, CSV, JSON, and more</small></span></label><input class="upload-input-hidden" id="upload-file" name="file" type="file" multiple required aria-describedby="upload-selection"><div class="upload-selection" id="upload-selection">No files selected</div></div><div class="control"><label for="upload-node">Destination cloud node</label><select id="upload-node" name="node_id"><option value="3">Customer DB</option><option value="2">Primary DB</option><option value="0">Auth Server</option><option value="1">API Gateway</option><option value="4">Backup Server</option></select></div><div class="control"><label for="upload-mode">Import mode</label><select id="upload-mode" name="mode"><option value="append">Add to existing data</option><option value="replace">Replace this node’s data</option></select></div><button class="btn primary" type="submit" id="upload-button">Upload to cloud</button></form><div class="upload-note">Files stay in this local Python app’s memory. Each file becomes a cloud record and can be downloaded from the stored-files list below. Limit: 10 MB total per upload. <span class="upload-status" id="upload-status">Python simulation connected · data stays on this device.</span></div></div>
+          <div class="card section-gap"><div class="card-head"><div><div class="card-title">Cloud storage nodes</div><div class="card-desc">Choose a node to upload directly to it. Each node is a separate simulated storage area.</div></div></div><div class="asset-grid" id="node-cards"></div></div>
+          <div class="card section-gap table-card"><div class="card-head"><div><div class="card-title">Stored files</div><div class="card-desc">Download files uploaded during this local cloud session</div></div><span class="pill blue" id="stored-files-pill">0 FILES</span></div><div class="table-wrap"><table><thead><tr><th>FILE</th><th>DESTINATION</th><th>SIZE</th><th>TYPE</th><th>RECORDS</th><th>ACTION</th></tr></thead><tbody id="cloud-files-body"><tr><td colspan="6" class="empty">No files yet. Upload a document above to add it to the cloud.</td></tr></tbody></table></div></div>
+          <div class="footer-note">Simulation only · files are stored in memory on this device and cleared when the Python server stops.</div>
+        </section>
+
+        <section class="page" id="page-overview">
+          <div class="page-head">
+            <div><div class="eyebrow">Security operations · Defense posture</div><h1>Security overview</h1><p class="subtitle">Review the defenses, decision policy, containment rates, and protection status guarding the simulated cloud.</p></div>
+            <div class="actions"><button class="btn" id="step-btn" title="Simulate one round">＋ One round</button><button class="btn primary" id="run-btn"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5a.7.7 0 0 1 1.05-.6l6.2 3.6a.7.7 0 0 1 0 1.2l-6.2 3.6A.7.7 0 0 1 5 10.7V3.5Z"/></svg>Run 20-round simulation</button></div>
+          </div>
+          <div class="kpis">
+            <div class="card kpi" style="--accent:var(--cyan);--glow:#52d6d033"><div class="kpi-top"><span class="kpi-label">Attack block rate</span><span class="kpi-icon">◈</span></div><div class="kpi-value" id="kpi-block">—</div><div class="kpi-note" id="kpi-block-note">Run a simulation to establish baseline</div></div>
+            <div class="card kpi" style="--accent:var(--green);--glow:#54d69b26"><div class="kpi-top"><span class="kpi-label">Data protection</span><span class="kpi-icon">◉</span></div><div class="kpi-value" id="kpi-data">—</div><div class="kpi-note" id="kpi-data-note">Records protected / assessed</div></div>
+            <div class="card kpi" style="--accent:var(--blue);--glow:#79a9ff22"><div class="kpi-top"><span class="kpi-label">Mean response time</span><span class="kpi-icon">◷</span></div><div class="kpi-value" id="kpi-response">—</div><div class="kpi-note">Simulated time to execute a defense</div></div>
+            <div class="card kpi" style="--accent:var(--amber);--glow:#ffc66d24"><div class="kpi-top"><span class="kpi-label">Threats contained</span><span class="kpi-icon">⌁</span></div><div class="kpi-value" id="kpi-contained">0 <small style="font-size:12px;color:#8190a8;font-weight:600">/ 0</small></div><div class="kpi-note" id="kpi-contained-note">No attack rounds processed</div></div>
+          </div>
+          <div class="grid-main">
+            <div class="card network-card">
+              <div class="card-head"><div><div class="card-title">Coordinated defense network</div><div class="card-desc">Shared threat intelligence feeds the decision engine</div></div><span class="pill blue" id="round-pill">READY · 0 ROUNDS</span></div>
+              <div class="network-area">
+                <svg class="network-svg" viewBox="0 0 600 230" preserveAspectRatio="none" aria-hidden="true"><path class="link-line" id="link-1" d="M150 53 C215 53 220 115 294 115"/><path class="link-line" id="link-2" d="M450 53 C385 53 380 115 306 115"/><path class="link-line" id="link-3" d="M150 177 C215 177 220 115 294 115"/><path class="link-line" id="link-4" d="M450 177 C385 177 380 115 306 115"/></svg>
+                <div class="net-layout">
+                  <div class="net-node auth"><div class="node-top"><div class="node-icon">⌑</div><div><div class="node-name">AuthSentinel</div><div class="node-meta">Identity &amp; access</div></div><i class="node-state"></i></div><div class="node-bottom"><span>Actions</span><strong id="node-auth">0</strong></div></div>
+                  <div class="net-node flow"><div class="node-top"><div class="node-icon" style="color:var(--blue)">≋</div><div><div class="node-name">FlowGuardian</div><div class="node-meta">Network traffic</div></div><i class="node-state"></i></div><div class="node-bottom"><span>Actions</span><strong id="node-flow">0</strong></div></div>
+                  <div class="net-node engine"><div class="engine-symbol"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/></svg></div><div class="engine-name">Decision Engine</div><div class="engine-tag">Utility-ranked proposals</div><div class="engine-rule">Execute at &gt; <strong id="engine-threshold">0.40</strong></div></div>
+                  <div class="net-node query"><div class="node-top"><div class="node-icon" style="color:var(--purple)">⌘</div><div><div class="node-name">QueryShield</div><div class="node-meta">Database queries</div></div><i class="node-state"></i></div><div class="node-bottom"><span>Actions</span><strong id="node-query">0</strong></div></div>
+                  <div class="net-node behavior"><div class="node-top"><div class="node-icon" style="color:var(--amber)">◌</div><div><div class="node-name">BehaviorWatch</div><div class="node-meta">User activity</div></div><i class="node-state"></i></div><div class="node-bottom"><span>Actions</span><strong id="node-behavior">0</strong></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><div class="card-title">Decision engine</div><div class="card-desc">The engine ranks proposals and resolves qualifying actions in the same round</div></div><span class="pill green">ACTIVE</span></div>
+              <div class="threshold-card" style="border-top:1px solid #24324a;border-bottom:1px solid #24324a;margin:0 17px;padding:13px 1px">
+                <div class="threshold-copy"><div class="threshold-title">Minimum utility score</div><div class="threshold-help">Higher values are more selective</div></div>
+                <div class="threshold-slider"><input id="threshold" type="range" min="0.10" max="0.90" step="0.01" value="0.40"><div class="slider-row"><span>0.10</span><span>0.90</span></div></div><div class="threshold-value" id="threshold-label">0.40</div>
+              </div>
+              <div class="agents-list" id="agent-summary"></div>
+            </div>
+          </div>
+          <h2 class="section-title">Security implementations</h2>
+          <div class="agent-grid">
+            <article class="card agent-card"><h3>Identity and access defense</h3><p>AuthSentinel scores login anomalies and coordinates account locks or source blocking. Credential-Bot uses bounded Minimax search to select credential attack tactics.</p><div class="metric-pairs"><div><span>Signals</span><strong>Login patterns</strong></div><div><span>Response</span><strong>Block / lock</strong></div></div></article>
+            <article class="card agent-card"><h3>Traffic flood protection</h3><p>FlowGuardian monitors simulated request rates and proposes rate limiting when traffic exceeds the API gateway’s modeled tolerance.</p><div class="metric-pairs"><div><span>Signals</span><strong>Request rate</strong></div><div><span>Response</span><strong>Rate limit</strong></div></div></article>
+            <article class="card agent-card"><h3>Query injection defense</h3><p>QueryShield uses Expectimax chance nodes to compare query rejection, sanitization, and monitoring under uncertain parser outcomes.</p><div class="metric-pairs"><div><span>Signals</span><strong>Query patterns</strong></div><div><span>Response</span><strong>Sanitize / reject</strong></div></div></article>
+            <article class="card agent-card"><h3>Insider behavior monitoring</h3><p>BehaviorWatch scores unusual user activity and can recommend session revocation when simulated access patterns look suspicious.</p><div class="metric-pairs"><div><span>Signals</span><strong>Access behavior</strong></div><div><span>Response</span><strong>Revoke session</strong></div></div></article>
+            <article class="card agent-card"><h3>Multi-agent decision engine</h3><p>Defender proposals are ranked by utility, compared with a shared threshold, and qualifying responses are coordinated in the same simulation round.</p><div class="metric-pairs"><div><span>Policy</span><strong>Utility ranking</strong></div><div><span>Coordination</span><strong>Shared intelligence</strong></div></div></article>
+          </div>
+          <div class="footer-note">Security controls and performance shown here belong to the local educational simulation.</div>
+        </section>
+
+        <section class="page" id="page-threats">
+          <div class="page-head"><div><div class="eyebrow">Threat lab · Adversarial exercise</div><h1>Attack simulation</h1><p class="subtitle">Tune attack pressure, select active vectors, and inspect how defender utility scores change.</p></div><div class="actions"><button class="btn" id="threat-step">＋ Simulate one round</button><button class="btn primary" id="threat-run">Run simulation</button></div></div>
+          <div class="card sim-control-card"><div class="card-head"><div><div class="card-title">Exercise configuration</div><div class="card-desc">Settings apply to the next simulation run</div></div><span class="pill amber">LOCAL MODEL</span></div><div class="controls">
+            <div class="control"><label for="round-select">Simulation rounds</label><select id="round-select"><option value="20">20 rounds · full</option><option value="10">10 rounds · standard</option><option value="5">5 rounds · quick</option></select></div>
+            <div class="control"><label for="intensity-select">Attack intensity</label><select id="intensity-select"><option value="normal">Normal · baseline</option><option value="elevated">Elevated</option><option value="severe">Severe</option></select></div>
+            <div class="control"><label>Active attack vectors</label><div class="toggle-list"><label class="toggle"><input class="vector-toggle" type="checkbox" value="auth" checked> Credential</label><label class="toggle"><input class="vector-toggle" type="checkbox" value="flow" checked> DDoS</label><label class="toggle"><input class="vector-toggle" type="checkbox" value="query" checked> SQLi</label><label class="toggle"><input class="vector-toggle" type="checkbox" value="behavior" checked> Insider</label></div></div>
+          </div></div>
+          <h2 class="section-title">Adversarial agents</h2>
+          <div class="attack-grid" id="attack-cards"></div>
+          <h2 class="section-title">Decision threshold</h2>
+          <div class="card threshold-card"><div class="threshold-copy"><div class="threshold-title">Minimum utility to execute</div><div class="threshold-help">The decision engine ranks proposals and selects actions above this threshold.</div></div><div class="threshold-slider"><input id="threshold-lab" type="range" min="0.10" max="0.90" step="0.01" value="0.40"><div class="slider-row"><span>More responsive · 0.10</span><span>More selective · 0.90</span></div></div><div class="threshold-value" id="threshold-lab-label">0.40</div></div>
+          <h2 class="section-title">Recent simulated attack decisions</h2>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>ROUND</th><th>ATTACKER</th><th>TARGET NODE</th><th>UTILITY</th><th>DEFENDER ACTION</th><th>OUTCOME</th></tr></thead><tbody id="attack-table"></tbody></table></div></div>
+          <div class="footer-note">Attack patterns and outcomes are synthetic and generated in the browser.</div>
+        </section>
+
+        <section class="page" id="page-simulation">
+          <div class="page-head"><div><div class="eyebrow">Live exercise · Coordinated agents</div><h1>Attack and defense simulation</h1><p class="subtitle">Run the attackers against the cloud, watch defenders coordinate, and inspect each agent’s role and decisions.</p></div><div class="actions"><button class="btn" id="simulation-step">＋ One round</button><button class="btn primary" id="agents-run">Run 20-round simulation</button></div></div>
+          <div class="bottom-grid">
+            <div class="card"><div class="card-head"><div><div class="card-title">Attacker activity</div><div class="card-desc">Adversarial agents probe the simulated environment</div></div><span class="mini-label" id="attack-count-label">0 events</span></div><div class="agents-list" id="attack-summary"></div></div>
+            <div class="card"><div class="card-head"><div><div class="card-title">Defense event stream</div><div class="card-desc">Most recent attack outcomes and defender decisions</div></div><span class="pill blue">LIVE SIM</span></div><div class="feed" id="event-feed"><div class="empty">Run a simulation to see coordinated defense events.</div></div></div>
+          </div>
+          <h2 class="section-title">Defender agent network</h2>
+          <div class="agent-grid" id="agent-cards"></div>
+          <h2 class="section-title">Coordination flow</h2>
+          <div class="card report-banner"><div class="eyebrow" style="margin:0;color:#74ddd5">Multi-agent decision loop</div><p>Attack telemetry is scored by the matching specialist. Each defender proposes an action and utility score. The Decision Engine ranks proposals and forms a joint action set above the shared threshold; those decisions are then resolved against the attacks in the same simulation round. Confirmed blocks, node damage, and record exposure feed the defense report.</p><div class="report-meta"><span>Intelligence exchange<strong>Cross-round signature counts</strong></span><span>Decision policy<strong>Ranked utility + shared threshold</strong></span><span>Defense state<strong id="agents-state">Awaiting simulation</strong></span></div></div>
+          <div class="footer-note">Agent reliability displayed here reflects this simulation run only; it is not a measured production benchmark.</div>
+        </section>
+
+        <section class="page" id="page-report">
+          <div class="page-head"><div><div class="eyebrow">Generated artifact · Simulation summary</div><h1>Final defense report</h1><p class="subtitle">A review-ready summary of attack containment, data protection, node health, and defender performance.</p></div><div class="actions"><button class="btn" id="print-report">Print report</button><button class="btn" id="download-csv">Export CSV</button><button class="btn primary" id="download-report">Download JSON</button></div></div>
+          <div class="card report-banner"><div class="eyebrow" style="margin:0;color:#74ddd5">Cloud-D · Enterprise cloud security exercise</div><p id="report-summary">No simulation has been run yet. Start a 20-round exercise to populate this report.</p><div class="report-meta"><span>Project<strong>Cloud-D Multi-Agent Decision System</strong></span><span>Prepared by<strong>Nithish M · 24X064</strong></span><span>Execution<strong id="report-date">Not run</strong></span><span>Rounds<strong id="report-rounds">0</strong></span></div></div>
+          <div class="kpis report-kpis section-gap">
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Attack block rate</span><span class="kpi-icon">◈</span></div><div class="kpi-value" id="report-block">—</div><div class="kpi-note" id="report-block-note">No events yet</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Data protection</span><span class="kpi-icon">◉</span></div><div class="kpi-value" id="report-data">—</div><div class="kpi-note" id="report-data-note">No records assessed</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Mean response time</span><span class="kpi-icon">◷</span></div><div class="kpi-value" id="report-response">—</div><div class="kpi-note">Simulated control-plane latency</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Data exposed</span><span class="kpi-icon">◇</span></div><div class="kpi-value" id="report-exposed">—</div><div class="kpi-note">Synthetic records in the model</div></div>
+            <div class="card kpi"><div class="kpi-top"><span class="kpi-label">Damage taken</span><span class="kpi-icon">⌁</span></div><div class="kpi-value" id="report-damage">—</div><div class="kpi-note">Total node health lost</div></div>
+          </div>
+          <h2 class="section-title">Defender performance</h2>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>DEFENDER</th><th>THREAT DOMAIN</th><th>EVENTS SCORED</th><th>ACTIONS EXECUTED</th><th>CONTAINMENT RATE</th><th>LAST UTILITY</th></tr></thead><tbody id="report-agent-table"></tbody></table></div></div>
+          <h2 class="section-title">Node health</h2>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>CLOUD NODE</th><th>STATUS</th><th>EVENTS OBSERVED</th><th>DEFENSE ACTIONS</th><th>SIMULATED IMPACT</th></tr></thead><tbody id="node-table"></tbody></table></div></div>
+          <div class="footer-note">This report summarizes a local synthetic simulation. It does not certify or measure a real cloud deployment.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./cloud-d.js"></script>
+</body>
+</html>
