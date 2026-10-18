@@ -23,7 +23,7 @@ The launcher opens `http://127.0.0.1:8765/`. If the browser does not open automa
 
 ## Deploy with GitHub and Render
 
-The `render.yaml` file configures a Python web service, health check, automatic deploys from the connected Git branch, and a required secret access password. Create a GitHub repository for the contents of this folder, connect that repository to Render, and create a Blueprint from `render.yaml`. Render will prompt for `CLOUD_D_ACCESS_PASSWORD`; set a strong password of at least 16 characters and keep it out of GitHub. The deployed dashboard asks for this password before it reads state, runs simulations, uploads, or downloads files.
+The `render.yaml` file configures a Python web service, health check, and a required secret access password. Create a Blueprint from the repository’s root `render.yaml`. Render prompts for `CLOUD_D_ACCESS_PASSWORD`; set a strong password of at least 16 characters and keep it out of GitHub. The deployed dashboard asks for this password before it reads state, runs simulations, uploads, or downloads files. This deployment was created from the public repository URL; automatic deploys after future GitHub pushes require connecting the GitHub provider to Render, or you can trigger a manual deploy in Render.
 
 The Blueprint uses Render’s free service plan. Free services can sleep after inactivity, and their local filesystem is temporary; this prototype keeps uploads in process memory, so uploads and simulation state can reset when the service sleeps, restarts, or redeploys. Durable online file storage needs a persistent storage service and is not configured here. The deployed site is a protected student demo, not a production cloud security service.
 
@@ -33,7 +33,7 @@ The **Cloud** page opens by default. Choose a destination node and upload any fi
 
 Use **Security Overview** for the defense controls and security metrics, **Simulation** for the live agent network and attack/defense event stream, **Attack Simulation** for the threat lab controls, and **Defense Report** for the run summary.
 
-Uploaded files are held in the local Python app’s memory. File contents are not sent to an external service or returned to the browser. The dashboard shows file names, counts, and opaque record IDs only. Stopping the server clears uploads and the current simulation. A new run restarts node health while retaining uploaded files in that running session.
+In local mode, uploaded files are held in the local Python process’s memory. In hosted mode, the browser sends files to the Render service, where they are held in process memory for that session. The dashboard shows file names, counts, and opaque record IDs; downloads return the selected file to the authorized browser. Hosted uploads can be cleared when the service sleeps, restarts, or redeploys, so use sample data and avoid sensitive files. A new simulation run restarts node health while retaining uploaded files in the current running session.
 
 ## Simulation model
 

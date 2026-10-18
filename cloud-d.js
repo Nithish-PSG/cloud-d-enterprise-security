@@ -3,6 +3,7 @@
 
   const $ = id => document.getElementById(id);
   const fmt = value => new Intl.NumberFormat('en-US').format(value || 0);
+  const isHostedDeployment = Boolean(location.hostname) && !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
   const vectors = [
     { id: 'auth', attacker: 'Credential-Bot', defender: 'AuthSentinel', domain: 'Credential attacks', icon: '⌑', target: 'Auth Server', color: 'var(--cyan)' },
     { id: 'flow', attacker: 'FloodSwarm', defender: 'FlowGuardian', domain: 'DDoS / traffic floods', icon: '≋', target: 'API Gateway', color: 'var(--blue)' },
@@ -24,6 +25,24 @@
     try { sessionStorage.removeItem('cloudDAccessPassword'); } catch (_error) { /* no persistent browser storage */ }
   }
 
+  function updateDeploymentCopy() {
+    const hosted = isHostedDeployment;
+    $('storage-mode-pill').textContent = hosted ? 'HOSTED DEMO' : 'LOCAL ONLY';
+    $('cloud-storage-note').textContent = hosted
+      ? 'Files held in this Render instance’s memory'
+      : 'Files held by the local simulation';
+    $('upload-storage-note').textContent = hosted
+      ? 'Uploaded files are sent to this Render service and held in server memory for the current session. Avoid sensitive files; uploads can be cleared when the service sleeps, restarts, or redeploys.'
+      : 'Files stay in this local Python app’s memory. Each file becomes a cloud record and can be downloaded from the stored-files list below. The server clears uploads when it stops.';
+    $('stored-files-description').textContent = hosted
+      ? 'Download files uploaded during this running Render service session'
+      : 'Download files uploaded during this local cloud session';
+    $('storage-footer-note').textContent = hosted
+      ? 'Simulation only · uploaded files are sent to Render and held in service memory, then cleared when the service sleeps, restarts, or redeploys.'
+      : 'Simulation only · files are stored in memory on this device and cleared when the Python server stops.';
+  }
+  updateDeploymentCopy();
+
   async function authorizedFetch(path, { method = 'GET', body, headers } = {}, retryAuth = true) {
     let response;
     try {
@@ -33,7 +52,9 @@
     } catch (_error) {
       const message = location.protocol === 'file:'
         ? 'The dashboard file was opened directly. Start Cloud-D with Start Cloud-D.command, then use the local browser page.'
-        : 'Could not reach the local simulation. Start Cloud-D.command again to launch its Python engine.';
+        : isHostedDeployment
+          ? 'Could not reach the hosted simulation. It may be starting or waking; retry in a moment.'
+          : 'Could not reach the local simulation. Start Cloud-D.command again to launch its Python engine.';
       $('upload-status').textContent = message;
       throw new Error(message);
     }
@@ -154,7 +175,7 @@
     const nodes = sim?.nodes || [];
     renderCloudFiles(nodes);
     if (!nodes.length) {
-      $('node-cards').innerHTML = '<div class="empty" style="grid-column:1/-1">Cloud nodes are waiting for the local Python engine.</div>';
+      $('node-cards').innerHTML = '<div class="empty" style="grid-column:1/-1">Cloud nodes initialize when the simulation starts.</div>';
       $('cloud-status-pill').textContent = '5 NODES · READY';
       $('cloud-nodes-online').textContent = '—';
       $('cloud-record-count').textContent = '—';
@@ -255,7 +276,7 @@
       const observed = (sim.attack_log || []).filter(event => event.target === node.name).length;
       const defended = (sim.attack_log || []).filter(event => event.target === node.name && event.blocked).length;
       return `<tr><td><strong>${node.name}</strong><div class="node-meta">${node.role} · ${node.uploaded_records} uploaded</div></td><td><span class="pill ${statusClass}">${node.status}</span></td><td>${observed}</td><td>${defended}</td><td>${node.compromised_records} records exposed · ${node.health} HP</td></tr>`;
-    }).join('') : '<tr><td colspan="5" class="empty">Cloud nodes initialize when you start the local Python app.</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty">Cloud nodes initialize when the Python simulation starts.</td></tr>';
   }
 
   function renderAll() {
@@ -301,11 +322,11 @@
     button.disabled = true;
     const selectedNode = $('upload-node').value;
     const selectedMode = $('upload-mode').value;
-    $('upload-status').textContent = `Loading ${files.length} file${files.length === 1 ? '' : 's'} into the local cloud…`;
+    $('upload-status').textContent = `Loading ${files.length} file${files.length === 1 ? '' : 's'} into the simulated cloud…`;
     try {
       const result = await request('/api/upload', { method: 'POST', body: new FormData($('upload-form')) });
       setSimulation(result.state);
-      $('upload-status').textContent = `${fmt(result.loaded)} file records loaded into ${result.node}. File contents stay on this device.`;
+      $('upload-status').textContent = `${fmt(result.loaded)} file records loaded into ${result.node}. ${isHostedDeployment ? 'Files are held in this Render session.' : 'Files stay in this device’s local simulation.'}`;
       $('upload-form').reset();
       $('upload-node').value = selectedNode;
       $('upload-mode').value = selectedMode;
@@ -320,7 +341,7 @@
   }
 
   function exportJson() {
-    if (!sim) { showToast('Start the local Python app before exporting.', true); return; }
+    if (!sim) { showToast('Connect to the Python simulation before exporting.', true); return; }
     const report = {
       project: 'Cloud-D — A Multi-Agent Decision System for Enterprise Cloud Security',
       author: 'Nithish M · 24X064', simulation_only: true,
@@ -337,7 +358,7 @@
   }
 
   function exportCsv() {
-    if (!sim) { showToast('Start the local Python app before exporting.', true); return; }
+    if (!sim) { showToast('Connect to the Python simulation before exporting.', true); return; }
     const rows = [['round','attacker','attack_type','target_node','utility','defender','action','outcome','damage','record_id','payload']];
     for (const event of sim.attack_log) rows.push([event.round,event.attacker,event.attack_type,event.target,event.utility,event.defender,event.action,event.blocked ? 'blocked' : event.damage ? 'impact' : 'no_damage',event.damage,event.record_id,event.payload]);
     const csv = rows.map(row => row.map(value => `"${String(value ?? '').replaceAll('"','""')}"`).join(',')).join('\n');
@@ -420,7 +441,9 @@
   });
 
   request('/api/state').then(setSimulation).then(() => {
-    $('upload-status').textContent = 'Python simulation connected · data stays on this device.';
+    $('upload-status').textContent = isHostedDeployment
+      ? 'Render simulation connected · session data is held in service memory.'
+      : 'Python simulation connected · data stays on this device.';
   }).catch(error => {
     renderAll();
     $('upload-status').textContent = error.message;
