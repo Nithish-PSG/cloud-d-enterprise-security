@@ -48,6 +48,8 @@ Set `CLOUD_D_DATA_DIR` to use a different data folder. Alternatively, `CLOUD_D_E
 
 Every upload is written to the account’s assigned primary area and mirrored as an encrypted file copy into the recovery database. The **Restore** action appears if a current primary copy is missing while its recovery copy remains available. If the primary SQLite file is replaced or lost while the backup database and key remain intact, Cloud-D rebuilds the primary file from the recovery copy on startup. Simulation state and active login sessions are not backed up.
 
+Staff can use the **Cryptographic demonstration** controls in the Cloud page to verify and authenticate encrypted primary-node copies or re-encrypt them with fresh AES-GCM ciphertext. Verification happens inside the Python service; plaintext is not sent to the browser. This demonstrates file-content confidentiality and integrity while keeping the deployment intentionally suitable for classroom demonstrations.
+
 When a filename already exists in the same folder, a popup offers **Update** or **Replace**. **Update** saves a new numbered version and keeps its history. **Replace** overwrites the file and removes its earlier versions. UTC timestamps are stored with revisions. Use **Versions** to inspect or download an earlier revision. A simulation reset preserves uploaded files and version history.
 
 The app parses CSV, JSON, JSON Lines, and NDJSON into simulated records. Other file types are stored as encrypted opaque documents. Uploads are limited to 10 MB total per request and 10,000 structured rows. The dashboard shows filenames and metadata, not document contents.

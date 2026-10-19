@@ -818,6 +818,8 @@
     $('auth-message').textContent = '';
     $('auth-message').classList.remove('error');
   });
+  $('verify-encryption-button').addEventListener('click', event => runNodeCryptoAction(2, 'verify', event.currentTarget));
+  $('reencrypt-button').addEventListener('click', event => runNodeCryptoAction(2, 'reencrypt', event.currentTarget));
   $('logout-button').addEventListener('click', signOut);
   $('create-folder-button').addEventListener('click', () => {
     $('folder-dialog').showModal();
