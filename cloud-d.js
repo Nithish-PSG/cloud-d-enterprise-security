@@ -159,9 +159,7 @@
     const password = $('auth-password');
     const toggle = $('password-toggle');
     password.type = visible ? 'text' : 'password';
-    toggle.textContent = visible ? 'Hide' : 'Show';
-    toggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
-    toggle.setAttribute('aria-pressed', String(visible));
+    toggle.checked = visible;
   }
 
   function setAuthMode(mode, clearMessage = true) {
@@ -803,8 +801,8 @@
     if (files.length) $('upload-progress-panel').classList.remove('active');
   });
   $('auth-form').addEventListener('submit', submitAuth);
-  $('password-toggle').addEventListener('click', () => {
-    setPasswordVisibility($('auth-password').type === 'password');
+  $('password-toggle').addEventListener('change', event => {
+    setPasswordVisibility(event.target.checked);
   });
   $('auth-mode-link').addEventListener('click', event => {
     event.preventDefault();

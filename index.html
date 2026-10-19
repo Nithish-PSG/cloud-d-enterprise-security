@@ -209,9 +209,9 @@
     .auth-fields input:focus { border-color:#35bbb4; box-shadow:0 0 0 3px #35bbb41c; }
     .auth-password-field { display:flex; gap:7px; }
     .auth-password-field input { min-width:0; flex:1; }
-    .password-toggle { min-width:62px; border:1px solid #2b3c55; border-radius:8px; padding:0 12px; background:#111d2e; color:#b8c8dd; cursor:pointer; font:inherit; font-size:10px; font-weight:650; }
-    .password-toggle:hover { border-color:#35bbb4; color:#a1f0e8; }
-    .password-toggle:focus-visible { outline:2px solid #80c5ff; outline-offset:2px; }
+    .password-visibility { display:flex; align-items:center; gap:7px; margin-top:1px; color:#8fa2ba; font-size:10px; cursor:pointer; }
+    .password-visibility input { width:14px; height:14px; min-height:14px; margin:0; accent-color:#35bbb4; cursor:pointer; }
+    .password-visibility:has(input:focus-visible) { color:#b9eee9; }
     .auth-fields [hidden] { display:none !important; }
     .auth-submit { width:100%; margin-top:16px; min-height:42px; }
     .auth-message { min-height:20px; margin-top:13px; color:#8edfc2; font-size:10px; line-height:1.5; }
@@ -336,7 +336,7 @@
       <form id="auth-form" class="auth-fields">
         <label id="auth-email-field" hidden>Email address<input id="auth-email" name="email" type="email" autocomplete="email" maxlength="254"></label>
         <label>Username<input id="auth-username" name="username" type="text" autocomplete="username" minlength="3" maxlength="30" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,29}" required><small class="auth-footnote" id="auth-username-help" hidden>Use 3–30 letters, numbers, dots, underscores, or hyphens. Existing accounts use a username based on the part of their email before @.</small></label>
-        <label>Password<span class="auth-password-field"><input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="10" required><button class="password-toggle" id="password-toggle" type="button" aria-controls="auth-password" aria-label="Show password" aria-pressed="false">Show</button></span><small class="auth-footnote">Use at least 10 characters.</small></label>
+        <label>Password<span class="auth-password-field"><input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="10" required></span><span class="password-visibility"><input id="password-toggle" type="checkbox" aria-controls="auth-password"><span>Show password</span></span><small class="auth-footnote">Use at least 10 characters.</small></label>
         <label id="staff-code-field" hidden>Staff Registration Code<input id="staff-registration-code" name="staff_registration_code" type="password" autocomplete="off"><small class="auth-footnote">A valid Staff Registration Code is mandatory. Staff account creation is not possible without a matching code.</small></label>
         <button class="btn primary auth-submit" id="auth-submit" type="submit">Sign in</button>
       </form>
