@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
   <meta name="theme-color" content="#171612">
   <title>Cloud-D | Multi-Agent Cloud Defense</title>
   <style>
@@ -576,6 +577,182 @@
     .auth-link-row,.auth-footnote { color:#51445f; }
     .table-card td strong,.metric-pairs strong,.report-meta strong { color:#261a38; }
     .pill,.mini-label { font-weight:750; }
+
+    /* ========================================================
+       PERFECT RESPONSIVE ALIGNMENT & SIZING FIXES
+       Maintains 100% of the Royal pastel palette & colors.
+       Ensures perfect alignment on window maximize, resize, tablet, mobile.
+       ======================================================== */
+    .content {
+      max-width: 1220px !important;
+      margin: 0 auto !important;
+      padding: 24px 24px 48px !important;
+    }
+
+    /* Primary storage & encrypted recovery card alignment */
+    .storage-console {
+      display: grid !important;
+      grid-template-columns: minmax(260px, 1fr) minmax(0, 1.7fr) !important;
+      gap: 16px !important;
+      align-items: stretch !important;
+      padding: 0 18px 18px !important;
+    }
+    .storage-intro {
+      display: flex !important;
+      gap: 14px !important;
+      align-items: center !important;
+      padding: 14px 16px !important;
+      border-radius: 11px !important;
+      background: rgba(255, 255, 255, 0.45) !important;
+      border: 1px solid rgba(213, 201, 231, 0.6) !important;
+    }
+    .storage-stats {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+    .storage-stat {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      padding: 12px 14px !important;
+      border-radius: 9px !important;
+    }
+    .crypto-demo {
+      grid-column: 1 / -1 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 16px !important;
+      border-top: 1px solid var(--line) !important;
+      padding-top: 14px !important;
+      margin-top: 6px !important;
+      flex-wrap: wrap !important;
+    }
+    .crypto-demo-copy {
+      flex: 1 !important;
+      min-width: 260px !important;
+    }
+    .crypto-demo-actions {
+      display: flex !important;
+      gap: 8px !important;
+      align-items: center !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Upload to your cloud area: clean 2-column balanced layout on desktop */
+    .upload-controls {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr) !important;
+      grid-template-rows: auto auto !important;
+      gap: 12px 18px !important;
+      align-items: start !important;
+      padding: 0 18px 16px !important;
+    }
+    .upload-controls .control:first-child {
+      grid-column: 1 !important;
+      grid-row: 1 / 3 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100% !important;
+    }
+    .upload-controls .control:first-child .upload-drop {
+      flex: 1 !important;
+      min-height: 110px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      text-align: center !important;
+      gap: 8px !important;
+    }
+    .upload-controls .control:nth-child(2) {
+      grid-column: 2 !important;
+      grid-row: 1 !important;
+    }
+    .upload-controls #upload-button {
+      grid-column: 2 !important;
+      grid-row: 2 !important;
+      width: 100% !important;
+      min-height: 42px !important;
+      align-self: end !important;
+    }
+
+    /* Cloud workspace files table & live activity */
+    .cloud-workspace {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr) !important;
+      gap: 18px !important;
+      align-items: start !important;
+    }
+    .cloud-tools {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      padding: 0 18px 14px !important;
+      flex-wrap: wrap !important;
+    }
+    .cloud-search {
+      flex: 1 !important;
+      min-width: 180px !important;
+    }
+    .cloud-tools select {
+      flex: 0 0 auto !important;
+      min-width: 130px !important;
+    }
+
+    /* KPIs Grid alignment */
+    .kpis {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      gap: 14px !important;
+      margin-bottom: 16px !important;
+    }
+    .report-kpis {
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+
+    /* Overview network layout */
+    .grid-main {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr) !important;
+      gap: 16px !important;
+    }
+
+    /* Responsive window resizing adjustments */
+    @media (max-width: 1024px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .report-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+      .grid-main { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 960px) {
+      .storage-console { grid-template-columns: 1fr !important; }
+      .storage-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .cloud-workspace { grid-template-columns: 1fr !important; }
+      .cloud-tools select { flex: 1 !important; }
+    }
+    @media (max-width: 800px) {
+      .upload-controls {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto !important;
+      }
+      .upload-controls .control:first-child,
+      .upload-controls .control:nth-child(2),
+      .upload-controls #upload-button {
+        grid-column: 1 !important;
+        grid-row: auto !important;
+      }
+      .upload-controls .control:first-child .upload-drop {
+        min-height: 56px !important;
+        flex-direction: row !important;
+      }
+    }
+    @media (max-width: 540px) {
+      .kpis { grid-template-columns: 1fr !important; }
+      .report-kpis { grid-template-columns: 1fr !important; }
+      .storage-stats { grid-template-columns: 1fr !important; }
+    }
+
   </style>
 </head>
 <body>
