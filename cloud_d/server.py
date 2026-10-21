@@ -118,6 +118,22 @@ class CloudDHandler(BaseHTTPRequestHandler):
         if path == "/cloud-d.js":
             self._send_file(WEB_ROOT / "cloud-d.js", "text/javascript; charset=utf-8")
             return
+        if path == "/manifest.json":
+            self._send_file(WEB_ROOT / "manifest.json", "application/manifest+json; charset=utf-8")
+            return
+        if path == "/sw.js":
+            self._send_file(WEB_ROOT / "sw.js", "text/javascript; charset=utf-8")
+            return
+        if path in {"/icon-192.png", "/icon-512.png", "/apple-touch-icon.png", "/apple-touch-icon-precomposed.png", "/favicon.ico"}:
+            # Generate a clean SVG-based shield icon placeholder for iOS / Android / desktop
+            svg = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="36" fill="#30264a"/><path d="M96 28 L156 56 v44 c0 42 -27 68 -60 80 -33 -12 -60 -38 -60 -80 V56 Z" fill="none" stroke="#c9b4ff" stroke-width="12" stroke-linejoin="round"/><path d="M68 96 L86 114 L128 72" fill="none" stroke="#8d78e8" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.send_header("Content-Length", str(len(svg)))
+            self.send_header("Cache-Control", "max-age=86400")
+            self.end_headers()
+            self.wfile.write(svg)
+            return
         user = self._require_user()
         if user is None:
             return
@@ -138,6 +154,38 @@ class CloudDHandler(BaseHTTPRequestHandler):
             return
         if path == "/api/folders":
             self._send_json(200, {"folders": self.app.list_folders(user)})
+            return
+        if path == "/api/nodes":
+            # Returns the logical node manifest: simulated nodes, their roles, and current health.
+            state = self.app.get_state(user)
+            nodes = state.get("nodes", [])
+            node_manifest = [
+                {"id": 0, "name": "Auth Server", "role": "Authentication & Key Manager",
+                 "type": "simulated", "description": "Handles login, session tokens, and staff registration code verification.",
+                 "storage_target": None, "health": next((n.get("health") for n in nodes if "Auth" in n.get("name", "")), 100)},
+                {"id": 1, "name": "API Gateway", "role": "Traffic Filter & Request Router",
+                 "type": "simulated", "description": "Routes requests to the correct database node based on account role.",
+                 "storage_target": None, "health": next((n.get("health") for n in nodes if "Gateway" in n.get("name", "")), 100)},
+                {"id": 2, "name": "Primary DB", "role": "Staff Vault & Shared Storage",
+                 "type": "simulated", "description": "Staff accounts store files here. Encrypted file blobs with AES-256-GCM.",
+                 "storage_target": "staff", "health": next((n.get("health") for n in nodes if "Primary" in n.get("name", "")), 100)},
+                {"id": 3, "name": "Customer DB", "role": "Customer Private Storage Area",
+                 "type": "simulated", "description": "Customer accounts store private files here. Isolated per customer account.",
+                 "storage_target": "customer", "health": next((n.get("health") for n in nodes if "Customer" in n.get("name", "")), 100)},
+                {"id": 4, "name": "Backup Server", "role": "Air-Gapped Recovery Database",
+                 "type": "simulated", "description": "Encrypted recovery copies for all uploaded files. Used for restore operations.",
+                 "storage_target": None, "health": next((n.get("health") for n in nodes if "Backup" in n.get("name", "")), 100)},
+            ]
+            architecture_note = (
+                "These five nodes are logically simulated within a single Python service backed by SQLite. "
+                "They are NOT independent microservices or database servers. "
+                "The simulation models attacker/defender interactions against these logical entities. "
+                "Primary DB and Customer DB route real file storage; Auth Server, API Gateway, and Backup Server "
+                "are represented in simulation metrics and event logs only."
+            )
+            self._send_json(200, {"nodes": node_manifest, "architecture": architecture_note,
+                                   "implementation": "single-process", "database": "SQLite",
+                                   "encryption": "AES-256-GCM file payloads"})
             return
         self._send_json(404, {"error": "Not found."})
 
