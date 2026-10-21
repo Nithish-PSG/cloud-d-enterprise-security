@@ -1,0 +1,22 @@
+{
+  "name": "Cloud-D | Multi-Agent Cloud Defense",
+  "short_name": "Cloud-D",
+  "description": "Educational multi-agent cloud security simulation. Upload files, run attacker/defender simulations, and view defense reports.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f0fb",
+  "theme_color": "#30264a",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Cloud Files", "url": "/#cloud", "description": "View your cloud files" },
+    { "name": "Security Overview", "url": "/#overview", "description": "Security dashboard" }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": []
+}
