@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "project": "Cloud-D",
+  "last_synced": "2026-10-21T10:41:29.162041+00:00",
+  "users": [
+    {
+      "user_id": "6ba8f0f9c6c0418992392d0f70aa5cc7",
+      "email": "local_test_staff@example.com",
+      "username": "local_test_staff",
+      "display_name": "local_test_staff",
+      "role": "staff",
+      "status": "active",
+      "password_salt": "gMZHreIC9efQ7XdDAIlf3g==",
+      "password_hash": "Hr/Ylqle7tsEZy40dGLxdWNInh6qOfyd1ufFWMrSAlo=",
+      "created_at": "2026-10-21T10:35:33.755833+00:00"
+    },
+    {
+      "user_id": "2901ead458c14414adc7f5260a701414",
+      "email": "local_test_staff2@example.com",
+      "username": "local_test_staff2",
+      "display_name": "local_test_staff2",
+      "role": "staff",
+      "status": "active",
+      "password_salt": "DaBmHW0cVK1i50R/xehr0w==",
+      "password_hash": "zrThDMbzo5wvbmGeUty0fzHSfb2Q2ngCa9DQduIBdrw=",
+      "created_at": "2026-10-21T10:35:41.101196+00:00"
+    },
+    {
+      "user_id": "49796d745db54ce5acbdedc50b022b39",
+      "email": "http_staff@example.com",
+      "username": "http_staff",
+      "display_name": "http_staff",
+      "role": "staff",
+      "status": "active",
+      "password_salt": "Y/78t4GJ6slgmKjIeKY9Wg==",
+      "password_hash": "vC8deiXa3p0xT9eo8Eyl/3ZT1lw80acCi1OmX+LmFUs=",
+      "created_at": "2026-10-21T10:35:59.473767+00:00"
+    },
+    {
+      "user_id": "e85b59655ce144839b6f99cf9e1eeb08",
+      "email": "sync_user@example.com",
+      "username": "sync_user",
+      "display_name": "sync_user",
+      "role": "customer",
+      "status": "active",
+      "password_salt": "5X9s/vD13zVx2UbJ+0bnTg==",
+      "password_hash": "BT9Lz5WJEVr7EozQY4SsRKavE9JLKMRAP367471NVmk=",
+      "created_at": "2026-10-21T10:40:32.966421+00:00"
+    },
+    {
+      "user_id": "f28ad088849a4aa7b372728b1792799a",
+      "email": "cust@example.com",
+      "username": "custuser",
+      "display_name": "custuser",
+      "role": "customer",
+      "status": "active",
+      "password_salt": "qP3ehDi48aUYET082u9n/w==",
+      "password_hash": "nmI9ULfgne8fKf9lPl2Ne0LTBw2g2NngW7jhmpKkyo4=",
+      "created_at": "2026-10-21T10:41:26.439257+00:00"
+    },
+    {
+      "user_id": "8a202c8c2c67484f82e42f65caffd5fa",
+      "email": "customer1@example.com",
+      "username": "customer1",
+      "display_name": "customer1",
+      "role": "customer",
+      "status": "active",
+      "password_salt": "jYndPw0rVnC82l0W+j86dQ==",
+      "password_hash": "k/iJ8FxCRkvN9aPXlwhSfO2bwa1y3KtpyZimqbFe52w=",
+      "created_at": "2026-10-21T10:41:26.925240+00:00"
+    },
+    {
+      "user_id": "87b52f2200334e5ca3c9ec6a6c95b997",
+      "email": "staff1@example.com",
+      "username": "staff1",
+      "display_name": "staff1",
+      "role": "staff",
+      "status": "active",
+      "password_salt": "zYXP/fCgciy4DBK0PDR42Q==",
+      "password_hash": "BTTsErJ7VxMlvXOpjgYQbyxoVr94HQHSVasMPP+H1Hk=",
+      "created_at": "2026-10-21T10:41:28.265820+00:00"
+    },
+    {
+      "user_id": "edc28bb80f8b4cda8e84dd4fb06e919b",
+      "email": "cust_srv@example.com",
+      "username": "cust_srv",
+      "display_name": "cust_srv",
+      "role": "customer",
+      "status": "active",
+      "password_salt": "vrqoKD+zD+hRn8Ars/tLHQ==",
+      "password_hash": "wgpptKU+/a8iQvOYicWKDcsKZdVKh6DwCZhZhjxGEEM=",
+      "created_at": "2026-10-21T10:41:28.744746+00:00"
+    },
+    {
+      "user_id": "f13372dc83994ace8d5745dd6bfccd0c",
+      "email": "staff_srv@example.com",
+      "username": "staff_srv",
+      "display_name": "staff_srv",
+      "role": "staff",
+      "status": "active",
+      "password_salt": "qkZAWayLwiQKwrV1kGVk8w==",
+      "password_hash": "/PjZmBFUERQQCRQ3bzTguMcKxJaSAoO7JTDIRteqGWw=",
+      "created_at": "2026-10-21T10:41:28.923769+00:00"
+    },
+    {
+      "user_id": "d6beeda5f6564bc78cf2fe0783011a31",
+      "email": "nodes_test@example.com",
+      "username": "nodes_test",
+      "display_name": "nodes_test",
+      "role": "customer",
+      "status": "active",
+      "password_salt": "ochD1yD/aBRWdB0OkR7Itw==",
+      "password_hash": "6TZMM5qNW36MdNYFcutxOzksYQjIY60MYUzFfEEMPr0=",
+      "created_at": "2026-10-21T10:41:29.132969+00:00"
+    }
+  ],
+  "folders": [
+    {
+      "folder_id": "folder-recovered-staff",
+      "scope_key": "staff",
+      "role": "staff",
+      "owner_id": null,
+      "node_id": 2,
+      "name": "Recovered files",
+      "created_at": "2026-10-21T10:41:28.391115+00:00"
+    },
+    {
+      "folder_id": "e73f28b8b1fc4bc985eced6a1ed69183",
+      "scope_key": "staff",
+      "role": "staff",
+      "owner_id": null,
+      "node_id": 2,
+      "name": "My Files",
+      "created_at": "2026-10-21T10:35:33.785115+00:00"
+    },
+    {
+      "folder_id": "fe504f936e2245f7ab341a8437c740bc",
+      "scope_key": "customer:e85b59655ce144839b6f99cf9e1eeb08",
+      "role": "customer",
+      "owner_id": "e85b59655ce144839b6f99cf9e1eeb08",
+      "node_id": 3,
+      "name": "My Files",
+      "created_at": "2026-10-21T10:40:32.994901+00:00"
+    },
+    {
+      "folder_id": "8057caa2b14347f0ba07c9183135f5e7",
+      "scope_key": "customer:f28ad088849a4aa7b372728b1792799a",
+      "role": "customer",
+      "owner_id": "f28ad088849a4aa7b372728b1792799a",
+      "node_id": 3,
+      "name": "My Files",
+      "created_at": "2026-10-21T10:41:26.462885+00:00"
+    },
+    {
+      "folder_id": "cf0c313d3fc94d63ae7955c292b8d2f1",
+      "scope_key": "customer:8a202c8c2c67484f82e42f65caffd5fa",
+      "role": "customer",
+      "owner_id": "8a202c8c2c67484f82e42f65caffd5fa",
+      "node_id": 3,
+      "name": "My Files",
+      "created_at": "2026-10-21T10:41:26.956857+00:00"
+    },
+    {
+      "folder_id": "8ffc67efb9d549fbbd84a517a486f8f3",
+      "scope_key": "customer:edc28bb80f8b4cda8e84dd4fb06e919b",
+      "role": "customer",
+      "owner_id": "edc28bb80f8b4cda8e84dd4fb06e919b",
+      "node_id": 3,
+      "name": "My Files",
+      "created_at": "2026-10-21T10:41:28.776032+00:00"
+    },
+    {
+      "folder_id": "6f6fc59dba9b496e902f0db93a443ffe",
+      "scope_key": "customer:d6beeda5f6564bc78cf2fe0783011a31",
+      "role": "customer",
+      "owner_id": "d6beeda5f6564bc78cf2fe0783011a31",
+      "node_id": 3,
+      "name": "My Files",
+      "created_at": "2026-10-21T10:41:29.147840+00:00"
+    }
+  ]
+}
