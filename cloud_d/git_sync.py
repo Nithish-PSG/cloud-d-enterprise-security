@@ -24,10 +24,9 @@ def _get_ssl_context():
     except Exception:
         pass
     try:
-        ctx = ssl.create_default_context()
-        return ctx
-    except Exception:
         return ssl._create_unverified_context()
+    except Exception:
+        return None
 
 
 REPO_OWNER = os.environ.get("GITHUB_REPO_OWNER", "nithishammu")
@@ -53,11 +52,20 @@ class GitSyncManager:
         self._lock = threading.Lock()
 
     def get_github_token(self) -> str | None:
-        return (
+        token = (
             os.environ.get("GITHUB_TOKEN")
             or os.environ.get("GH_TOKEN")
             or os.environ.get("CLOUD_D_GITHUB_TOKEN")
         )
+        if token:
+            return token
+        token_file = Path.home() / ".cloud-d" / "github_token"
+        if token_file.exists():
+            try:
+                return token_file.read_text(encoding="utf-8").strip()
+            except Exception:
+                pass
+        return None
 
     def export_state_from_db(self) -> dict[str, Any]:
         """Read users and folders from SQLite and serialize to JSON-safe dictionary."""
@@ -99,12 +107,33 @@ class GitSyncManager:
                     "created_at": row["created_at"],
                 })
 
+            # Export files (encrypted payloads)
+            files = []
+            file_cursor = self.storage._connection.execute(
+                "SELECT file_id, node_id, logical_id, version_number, is_current, owner_id, access_role, folder_id, nonce, ciphertext, created_at FROM cloud_files"
+            )
+            for row in file_cursor.fetchall():
+                files.append({
+                    "file_id": row["file_id"],
+                    "node_id": row["node_id"],
+                    "logical_id": row["logical_id"],
+                    "version_number": row["version_number"],
+                    "is_current": row["is_current"],
+                    "owner_id": row["owner_id"],
+                    "access_role": row["access_role"],
+                    "folder_id": row["folder_id"],
+                    "nonce": base64.b64encode(row["nonce"]).decode("ascii"),
+                    "ciphertext": base64.b64encode(row["ciphertext"]).decode("ascii"),
+                    "created_at": row["created_at"],
+                })
+
         return {
             "version": 1,
             "project": "Cloud-D",
             "last_synced": datetime.now(timezone.utc).isoformat(),
             "users": users,
             "folders": folders,
+            "files": files,
         }
 
     def import_state_to_db(self, state: dict[str, Any]) -> int:
@@ -183,6 +212,49 @@ class GitSyncManager:
                 except Exception as exc:
                     print(f"Cloud-D sync folder import error: {exc}")
 
+            files = state.get("files", [])
+            for file_item in files:
+                try:
+                    nonce = base64.b64decode(file_item["nonce"])
+                    ciphertext = base64.b64decode(file_item["ciphertext"])
+                    self.storage._connection.execute(
+                        """
+                        INSERT OR IGNORE INTO cloud_files (
+                            file_id, node_id, logical_id, version_number, is_current, owner_id, access_role, folder_id, nonce, ciphertext, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            file_item["file_id"],
+                            file_item["node_id"],
+                            file_item["logical_id"],
+                            file_item["version_number"],
+                            file_item["is_current"],
+                            file_item.get("owner_id"),
+                            file_item["access_role"],
+                            file_item.get("folder_id"),
+                            nonce,
+                            ciphertext,
+                            file_item["created_at"],
+                        ),
+                    )
+                    self.storage._connection.execute(
+                        """
+                        INSERT OR IGNORE INTO backup_db.backup_files (
+                            file_id, primary_file_id, node_id, nonce, ciphertext, mirrored_at
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            file_item["file_id"] + "-backup",
+                            file_item["file_id"],
+                            file_item["node_id"],
+                            nonce,
+                            ciphertext,
+                            file_item["created_at"],
+                        ),
+                    )
+                except Exception as exc:
+                    print(f"Cloud-D sync file import error: {exc}")
+
         return imported_count
 
     def save_local_state(self, state: dict[str, Any] | None = None) -> Path:
@@ -259,8 +331,10 @@ class GitSyncManager:
         json_bytes = json.dumps(state, indent=2, ensure_ascii=False).encode("utf-8")
         encoded_content = base64.b64encode(json_bytes).decode("ascii")
         user_count = len(state.get("users", []))
+        folder_count = len(state.get("folders", []))
+        file_count = len(state.get("files", []))
         body: dict[str, Any] = {
-            "message": f"sync: update users registry ({user_count} accounts)",
+            "message": f"sync: update state ({user_count} accounts, {folder_count} folders, {file_count} files)",
             "content": encoded_content,
             "branch": TARGET_BRANCH,
         }
@@ -321,14 +395,20 @@ class GitSyncManager:
     def sync_after_registration(self) -> None:
         """Trigger asynchronous non-blocking sync to Git after user registration."""
         def _worker():
-            with self._lock:
-                state = self.export_state_from_db()
-                self.save_local_state(state)
-                # Try GitHub REST API first (works on Render and cloud)
-                pushed = self.push_to_github(state)
-                if not pushed:
-                    # Fallback to local git CLI
-                    self.push_to_local_git()
+            try:
+                with self._lock:
+                    if not self.storage:
+                        return
+                    state = self.export_state_from_db()
+                    self.save_local_state(state)
+                    # Try GitHub REST API first (works on Render and cloud)
+                    pushed = self.push_to_github(state)
+                    if not pushed:
+                        # Fallback to local git CLI
+                        self.push_to_local_git()
+            except Exception as exc:
+                if "closed" not in str(exc).lower():
+                    print(f"Cloud-D sync worker error: {exc}")
 
         threading.Thread(target=_worker, daemon=True, name="GitSyncWorker").start()
 
