@@ -241,8 +241,9 @@
     .upload-card { border-color:#28605d; box-shadow:0 12px 35px #1b827b12; }
     .upload-card .card-head { padding-bottom:15px; }
     .upload-controls { display:grid; grid-template-columns:minmax(220px,1.5fr) minmax(140px,1fr) auto; gap:10px; align-items:end; padding:0 16px 13px; }
-    .folder-select-row { display:grid; grid-template-columns:minmax(120px,1fr) auto; gap:6px; }
-    .folder-select-row select { width:100%; min-height:38px; border:1px solid #4b4336; border-radius:8px; padding:0 10px; background:#191814; color:#f1eadf; }
+    .folder-select-row { display:flex; gap:6px; align-items:center; width:100%; }
+    .folder-select-row select { flex:1; min-width:0; width:100%; min-height:38px; border:1px solid #4b4336; border-radius:8px; padding:0 10px; background:#191814; color:#f1eadf; }
+    .folder-select-row #create-folder-button[hidden] { display:none !important; }
     .upload-drop { min-height:54px; border:1px dashed #876544; border-radius:9px; background:#211d17; display:flex; align-items:center; gap:11px; padding:10px 12px; cursor:pointer; transition:.16s ease; }
     .upload-drop:hover,.upload-drop.drag-over { border-color:var(--cyan); background:#34291e; }
     .upload-cloud-icon { width:30px; height:30px; flex:0 0 auto; display:grid; place-items:center; border-radius:8px; background:#493522; color:var(--cyan); font-size:17px; }
