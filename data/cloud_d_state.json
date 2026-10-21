@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": "Cloud-D",
-  "last_synced": "2026-10-21T11:40:12.544870+00:00",
+  "last_synced": "2026-10-21T15:39:35.821156+00:00",
   "users": [
     {
       "user_id": "6ba8f0f9c6c0418992392d0f70aa5cc7",
@@ -112,6 +112,17 @@
       "password_salt": "ochD1yD/aBRWdB0OkR7Itw==",
       "password_hash": "6TZMM5qNW36MdNYFcutxOzksYQjIY60MYUzFfEEMPr0=",
       "created_at": "2026-10-21T10:41:29.132969+00:00"
+    },
+    {
+      "user_id": "6fd2fc6179c445e085cf413a565dcb6b",
+      "email": "skarthigaa429@gmail.com",
+      "username": "karthigaa",
+      "display_name": "karthigaa",
+      "role": "customer",
+      "status": "active",
+      "password_salt": "KzLx1Mr8ci/eO8+x71FhHw==",
+      "password_hash": "oVpCcUNn9qianLogWfNOH5Pg7XXosa5tkyNaEXFj1fQ=",
+      "created_at": "2026-10-21T15:39:35.786521+00:00"
     }
   ],
   "folders": [
@@ -122,7 +133,7 @@
       "owner_id": null,
       "node_id": 2,
       "name": "Recovered files",
-      "created_at": "2026-10-21T10:28:19.427676+00:00"
+      "created_at": "2026-10-21T15:38:47.700517+00:00"
     },
     {
       "folder_id": "e73f28b8b1fc4bc985eced6a1ed69183",
@@ -177,6 +188,15 @@
       "node_id": 3,
       "name": "My Files",
       "created_at": "2026-10-21T10:41:29.147840+00:00"
+    },
+    {
+      "folder_id": "d0386a70051c4d86a6282bf8857c683b",
+      "scope_key": "customer:6fd2fc6179c445e085cf413a565dcb6b",
+      "role": "customer",
+      "owner_id": "6fd2fc6179c445e085cf413a565dcb6b",
+      "node_id": 3,
+      "name": "My Files",
+      "created_at": "2026-10-21T15:39:35.804344+00:00"
     }
   ],
   "files": []
