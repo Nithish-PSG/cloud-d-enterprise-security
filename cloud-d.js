@@ -31,16 +31,16 @@
 
   function updateDeploymentCopy() {
     const hosted = isHostedDeployment;
-    $('storage-mode-pill').textContent = hosted ? 'HOSTED · TEMPORARY' : 'LOCAL · PERSISTENT';
+    $('storage-mode-pill').textContent = hosted ? 'HOSTED · PERSISTENT DISK' : 'LOCAL · PERSISTENT';
     $('cloud-storage-note').textContent = hosted
-      ? 'AES-256-GCM file copies · host storage is temporary'
+      ? 'AES-256-GCM file copies · Render persistent disk'
       : 'Automatic SQLite recovery copy';
     $('upload-storage-note').textContent = hosted
-      ? 'Uploads are encrypted before SQLite writes them. Render’s filesystem is temporary, so this hosted copy may be lost when its instance is replaced.'
+      ? 'Uploads are encrypted with AES-256-GCM before SQLite writes them. The hosted service uses a Render persistent disk so data survives instance restarts.'
       : 'File contents are encrypted before SQLite writes them and stay on this device across app restarts. Back up both databases and the encryption key together.';
     $('stored-files-description').textContent = 'Folders and files are scoped to your account. Each saved revision is mirrored to the encrypted recovery database.';
     $('storage-footer-note').textContent = hosted
-      ? 'Simulation only · file contents use AES-256-GCM, but this Render service has temporary local storage.'
+      ? 'Simulation only · file contents use AES-256-GCM and are stored on a Render persistent disk (/var/cloud-d-data).'
       : 'Simulation only · file contents use AES-256-GCM and persist in local SQLite databases.';
   }
   updateDeploymentCopy();
@@ -111,6 +111,8 @@
     }
   }
 
+  let lastSelectedFolder = '';
+
   async function refreshFolders(selectedId = '') {
     const result = await request('/api/folders');
     const folders = result.folders || [];
@@ -118,9 +120,27 @@
     const filterSelect = $('cloud-folder-filter');
     const previousUpload = selectedId || uploadSelect.value;
     const previousFilter = filterSelect.value;
-    uploadSelect.innerHTML = folders.map(folder => `<option value="${escapeHtml(folder.id)}">${escapeHtml(folder.name)}</option>`).join('');
+
+    const isCustomer = currentUser && currentUser.role === 'customer';
+    const folderBtn = $('create-folder-button');
+    if (folderBtn) {
+      folderBtn.hidden = isCustomer;
+      folderBtn.style.display = isCustomer ? 'none' : '';
+    }
+
+    let uploadOptions = folders.map(folder => `<option value="${escapeHtml(folder.id)}">${escapeHtml(folder.name)}</option>`).join('');
+    uploadOptions += '<option value="__new_folder__">＋ New folder…</option>';
+
+    uploadSelect.innerHTML = uploadOptions;
     filterSelect.innerHTML = '<option value="all">All folders</option>' + folders.map(folder => `<option value="${escapeHtml(folder.id)}">${escapeHtml(folder.name)}</option>`).join('');
-    if (folders.some(folder => folder.id === previousUpload)) uploadSelect.value = previousUpload;
+
+    if (folders.some(folder => folder.id === previousUpload)) {
+      uploadSelect.value = previousUpload;
+      lastSelectedFolder = previousUpload;
+    } else if (folders.length > 0) {
+      uploadSelect.value = folders[0].id;
+      lastSelectedFolder = folders[0].id;
+    }
     if (folders.some(folder => folder.id === previousFilter)) filterSelect.value = previousFilter;
     renderFilteredCloudFiles();
   }
@@ -306,7 +326,7 @@
   }
 
   async function syncCloudWorkspace() {
-    if (!currentUser || !document.getElementById('page-cloud').classList.contains('active') || document.visibilityState !== 'visible' || running || uploading) return;
+    if (!currentUser || document.visibilityState !== 'visible' || running || uploading) return;
     setCloudConnection('syncing');
     try {
       setSimulation(await request('/api/state'));
@@ -537,11 +557,15 @@
     if (!files.length) { showToast('Choose at least one document or data file first.', true); return; }
     const totalBytes = files.reduce((total, file) => total + file.size, 0);
     if (totalBytes > 10 * 1024 * 1024) { showToast('Selected files must total 10 MB or less.', true); return; }
+    const selectedFolder = $('upload-folder').value;
+    if (!selectedFolder || selectedFolder === '__new_folder__') {
+      showToast('Please select or create a destination folder first.', true);
+      return;
+    }
     const button = $('upload-button');
     button.disabled = true;
     uploading = true;
     $('upload-progress-panel').classList.add('active');
-    const selectedFolder = $('upload-folder').value;
     clearTimeout(progressHideTimer);
     button.textContent = 'Uploading…';
     $('upload-status').textContent = `Connecting ${files.length} file${files.length === 1 ? '' : 's'} to ${$('upload-folder').selectedOptions[0]?.textContent || 'your folder'}…`;
@@ -825,6 +849,19 @@
     $('folder-dialog').showModal();
     $('folder-name-input').focus();
   });
+  $('upload-folder').addEventListener('change', event => {
+    if (event.target.value === '__new_folder__') {
+      $('folder-dialog').showModal();
+      $('folder-name-input').focus();
+    } else {
+      lastSelectedFolder = event.target.value;
+    }
+  });
+  $('folder-dialog').addEventListener('close', () => {
+    if ($('upload-folder').value === '__new_folder__') {
+      $('upload-folder').value = lastSelectedFolder;
+    }
+  });
   $('folder-form').addEventListener('submit', createFolder);
   $('close-folder-dialog').addEventListener('click', () => $('folder-dialog').close());
   $('cancel-folder-dialog').addEventListener('click', () => $('folder-dialog').close());
@@ -852,7 +889,7 @@
     }
   }
   bootstrapSession();
-  setInterval(syncCloudWorkspace, 6000);
+  setInterval(syncCloudWorkspace, 4000);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') syncCloudWorkspace();
   });
